@@ -280,8 +280,7 @@ The following diagram illustrates the complete incident mode flow from incident 
 sequenceDiagram
     participant User as Operator
     participant FE as Frontend Dashboard
-    participant BE as Backend API
-    participant AI as AI Agent (Gemini)
+    participant BE as Backend API<br/>(AI Agent + MCP Client)
     participant MCP as MCP Server
     participant Edge as Edge Node
     participant Drone as Drone Kit
@@ -289,10 +288,9 @@ sequenceDiagram
     Note over User,Drone: Phase 0: Incident Initiation
     User->>FE: Report incident via chatbot<br/>"Bushfire at [address]"
     FE->>BE: POST /api/chat/message
-    BE->>AI: Process user message
-    AI->>MCP: geocode_address(address)
-    MCP-->>AI: {lat, lon}
-    AI-->>BE: Incident location coordinates
+    BE->>BE: AI Agent processes user message
+    BE->>MCP: geocode_address(address)
+    MCP-->>BE: {lat, lon}
     BE-->>FE: SSE stream (incident location)
     FE->>FE: Add incident marker to map<br/>Switch to Emergency Mode
     Note over User,Drone: Rescue teams & drone deployed
@@ -300,36 +298,33 @@ sequenceDiagram
     Note over User,Drone: Phase 1: Edge Setup & Deployment
     User->>FE: "Find closest edge node and deploy<br/>fire-spread-prediction:v2.0"
     FE->>BE: POST /api/chat/message
-    BE->>AI: Process request
-    AI->>MCP: discover_edge_node(lat, lon)
-    MCP-->>AI: {edgeZone, location}
-    AI->>MCP: deploy_edge_application(zone, imageId)
-    MCP-->>AI: {deploymentId, status}
+    BE->>BE: AI Agent processes request
+    BE->>MCP: discover_edge_node(lat, lon)
+    MCP-->>BE: {edgeZone, location}
+    BE->>MCP: deploy_edge_application(zone, imageId)
+    MCP-->>BE: {deploymentId, status}
     MCP->>Edge: Deploy media server + AI model
     Edge-->>MCP: Deployment successful
-    AI-->>BE: Edge deployment complete
     BE-->>FE: SSE stream (edge info)
     FE->>FE: Show edge marker on map<br/>Update EdgeAnalysisResults
 
     Note over User,Drone: Phase 2: Geofencing & Flight
     User->>FE: "Create geofencing subscription<br/>radius 200m for drone"
     FE->>BE: POST /api/chat/message
-    BE->>AI: Process request
-    AI->>MCP: subscribe_geofencing(deviceId, lat, lon, radius)
-    MCP-->>AI: {subscriptionId}
-    AI-->>BE: Geofencing active
+    BE->>BE: AI Agent processes request
+    BE->>MCP: subscribe_geofencing(deviceId, lat, lon, radius)
+    MCP-->>BE: {subscriptionId}
     BE-->>FE: SSE stream (geofencing data)
     FE->>FE: Draw geofencing circle on map<br/>Add to ActiveSubscriptionsPanel
 
     User->>FE: "Accept remote incoming WebRTC call"
     FE->>BE: POST /api/chat/message
-    BE->>AI: Process request
-    AI->>MCP: handle_webrtc_call(action: create)
-    MCP-->>AI: {sessionId}
+    BE->>BE: AI Agent processes request
+    BE->>MCP: handle_webrtc_call(action: create)
+    MCP-->>BE: {sessionId}
     Drone->>Edge: Start WebRTC video stream
     Edge-->>Drone: Stream acknowledged
     Edge-->>MCP: Relay media streaming
-    AI-->>BE: WebRTC session active
     BE-->>FE: SSE stream (video session)
     FE->>FE: Show video in VideoStreamViewer
 
@@ -352,10 +347,9 @@ sequenceDiagram
 
     User->>FE: "Subscribe to network type changes"
     FE->>BE: POST /api/chat/message
-    BE->>AI: Process request
-    AI->>MCP: subscribe_connected_network(deviceId)
-    MCP-->>AI: {subscriptionId}
-    AI-->>BE: Network monitoring active
+    BE->>BE: AI Agent processes request
+    BE->>MCP: subscribe_connected_network(deviceId)
+    MCP-->>BE: {subscriptionId}
     BE-->>FE: SSE stream (subscription info)
     FE->>FE: Add to ActiveSubscriptionsPanel
 
@@ -368,12 +362,11 @@ sequenceDiagram
     Note over User,Drone: Phase 4: QoS Management
     User->>FE: "Create QoD session using QOS_M"
     FE->>BE: POST /api/chat/message
-    BE->>AI: Process request
-    AI->>MCP: get_qos_profiles()
-    MCP-->>AI: {QOS_H, QOS_M, QOS_L}
-    AI->>MCP: create_quality_on_demand(qosProfile: QOS_M)
-    MCP-->>AI: {qodSessionId}
-    AI-->>BE: QoS session active
+    BE->>BE: AI Agent processes request
+    BE->>MCP: get_qos_profiles()
+    MCP-->>BE: {QOS_H, QOS_M, QOS_L}
+    BE->>MCP: create_quality_on_demand(qosProfile: QOS_M)
+    MCP-->>BE: {qodSessionId}
     BE-->>FE: SSE stream (QoS info)
     FE->>FE: Update NetworkMetricsPanel<br/>Show QOS_M badge
 
@@ -387,51 +380,47 @@ sequenceDiagram
     Note over User,Drone: Phase 5: AI Queries
     User->>FE: "What is the current location<br/>of the drone?"
     FE->>BE: POST /api/chat/message
-    BE->>AI: Process query
-    AI->>MCP: Location Retrieval API
+    BE->>BE: AI Agent processes query
+    BE->>MCP: Location Retrieval API
     MCP->>Drone: Get location
     Drone-->>MCP: {lat, lon, accuracy}
-    MCP-->>AI: Location data
-    AI-->>BE: "Drone is at [coordinates]<br/>within disaster area"
-    BE-->>FE: SSE stream (AI response)
+    MCP-->>BE: Location data
+    BE-->>FE: SSE stream (AI response:<br/>"Drone is at [coordinates]")
     FE->>FE: Display in chatbot
 
     User->>FE: "How many people are in<br/>the disaster area?"
     FE->>BE: POST /api/chat/message
-    BE->>AI: Process query
-    AI->>MCP: Region Device Count API
-    MCP-->>AI: {deviceCount: 75}
-    AI-->>BE: "Approximately 75 devices<br/>detected in the area"
-    BE-->>FE: SSE stream (AI response)
+    BE->>BE: AI Agent processes query
+    BE->>MCP: Region Device Count API
+    MCP-->>BE: {deviceCount: 75}
+    BE-->>FE: SSE stream (AI response:<br/>"~75 devices detected")
     FE->>FE: Display in chatbot
 
     Note over User,Drone: Phase 6: Mission Completion
     User->>FE: "Mission complete, cleanup<br/>and close incident"
     FE->>BE: POST /api/chat/message
-    BE->>AI: Process cleanup request
+    BE->>BE: AI Agent processes cleanup request
 
-    AI->>MCP: handle_webrtc_call(action: cancel)
+    BE->>MCP: handle_webrtc_call(action: cancel)
     MCP->>Edge: Terminate WebRTC session
     Edge-->>MCP: Session terminated
-    MCP-->>AI: WebRTC call ended
+    MCP-->>BE: WebRTC call ended
 
-    AI->>MCP: undeploy_edge_application(deploymentId)
+    BE->>MCP: undeploy_edge_application(deploymentId)
     MCP->>Edge: Undeploy apps
     Edge-->>MCP: Undeployed
-    MCP-->>AI: Edge cleanup complete
+    MCP-->>BE: Edge cleanup complete
 
-    AI->>MCP: unsubscribe_geofencing(subscriptionId)
-    MCP-->>AI: Subscription cancelled
+    BE->>MCP: unsubscribe_geofencing(subscriptionId)
+    MCP-->>BE: Subscription cancelled
 
-    AI->>MCP: unsubscribe_connected_network(subscriptionId)
-    MCP-->>AI: Subscription cancelled
+    BE->>MCP: unsubscribe_connected_network(subscriptionId)
+    MCP-->>BE: Subscription cancelled
 
-    AI-->>BE: All cleanup complete
     BE-->>FE: SSE stream (cleanup status)
     FE->>FE: Clear map markers<br/>Switch to Normal Mode<br/>Show StatusPanel
 
-    AI-->>BE: "Mission completed successfully.<br/>Dashboard reset to normal status."
-    BE-->>FE: SSE stream (final message)
+    BE-->>FE: SSE stream (final message:<br/>"Mission completed")
     FE->>FE: Display completion message
 ```
 
