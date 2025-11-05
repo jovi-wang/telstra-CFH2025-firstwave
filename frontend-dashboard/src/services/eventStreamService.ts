@@ -77,13 +77,13 @@ class EventStreamService {
       });
     });
 
-    // Handle location_update - emit to subscribers (used for heatmap location)
+    // Handle location_update - not emit to subscribers but log the data, TODO (emit to TelemetryPanel for location fusion display)
     this.eventSource.addEventListener('location_update', (event: any) => {
       const data = JSON.parse(event.data);
       console.log('📍 Location Update Event:', data);
     });
 
-    // Handle region_device_count - emit with full data
+    // Handle region_device_count - emit with data (used for heatmap display)
     this.eventSource.addEventListener('region_device_count', (event: any) => {
       const data = JSON.parse(event.data);
       console.log('📊 Region Device Count Event:', data);

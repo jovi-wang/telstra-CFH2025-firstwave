@@ -3,7 +3,6 @@
  * Handles communication with FastAPI backend via Server-Sent Events (SSE)
  */
 
-// Hardcoded backend URL
 const BACKEND_URL = 'http://localhost:4000';
 
 /**

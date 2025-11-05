@@ -6,7 +6,7 @@ Developed for [Telstra's Connected Future Hackathon 2025](https://telstra.bright
 
 ## 🌟 Executive Summary
 
-This system demonstrates an innovative disaster response solution combining drone operations with multiple CAMARA network APIs. The typical workflow involves:
+This system demonstrates an innovative disaster response solution combining drone operations with 12 CAMARA network APIs. The typical workflow involves:
 
 1. **Incident Reporting**: Operator reports bushfire location (street address) in chatbot interface
 2. **Geofencing Setup**: Creates geofencing subscription around disaster area with visual map marker
@@ -132,7 +132,7 @@ Dashboard runs at `http://localhost:5173`
 - Built with **FastMCP** (Model Context Protocol server framework)
 - Runs as subprocess with stdio communication
 - Returns mock data that simulates CAMARA API responses
-- 13 MCP tools
+- 12 MCP tools
 
 **Note**: All CAMARA APIs are mocked - no actual network API calls are made. This demonstrates the chatbot UX and integration patterns for the hackathon.
 
@@ -270,6 +270,169 @@ Dashboard: Removes geofencing circle, stops event notifications
 ```
 Operator: Manually switches dashboard back to normal mode
 Dashboard: Returns to normal status, clears incident markers
+```
+
+## 🔄 Incident Mode Sequence Diagram
+
+The following diagram illustrates the complete incident mode flow from incident reporting through mission completion:
+
+```mermaid
+sequenceDiagram
+    participant User as Operator
+    participant FE as Frontend Dashboard
+    participant BE as Backend API
+    participant AI as AI Agent (Gemini)
+    participant MCP as MCP Server
+    participant Edge as Edge Node
+    participant Drone as Drone Kit
+
+    Note over User,Drone: Phase 0: Incident Initiation
+    User->>FE: Report incident via chatbot<br/>"Bushfire at [address]"
+    FE->>BE: POST /api/chat/message
+    BE->>AI: Process user message
+    AI->>MCP: geocode_address(address)
+    MCP-->>AI: {lat, lon}
+    AI-->>BE: Incident location coordinates
+    BE-->>FE: SSE stream (incident location)
+    FE->>FE: Add incident marker to map<br/>Switch to Emergency Mode
+    Note over User,Drone: Rescue teams & drone deployed
+
+    Note over User,Drone: Phase 1: Edge Setup & Deployment
+    User->>FE: "Find closest edge node and deploy<br/>fire-spread-prediction:v2.0"
+    FE->>BE: POST /api/chat/message
+    BE->>AI: Process request
+    AI->>MCP: discover_edge_node(lat, lon)
+    MCP-->>AI: {edgeZone, location}
+    AI->>MCP: deploy_edge_application(zone, imageId)
+    MCP-->>AI: {deploymentId, status}
+    MCP->>Edge: Deploy media server + AI model
+    Edge-->>MCP: Deployment successful
+    AI-->>BE: Edge deployment complete
+    BE-->>FE: SSE stream (edge info)
+    FE->>FE: Show edge marker on map<br/>Update EdgeAnalysisResults
+
+    Note over User,Drone: Phase 2: Geofencing & Flight
+    User->>FE: "Create geofencing subscription<br/>radius 200m for drone"
+    FE->>BE: POST /api/chat/message
+    BE->>AI: Process request
+    AI->>MCP: subscribe_geofencing(deviceId, lat, lon, radius)
+    MCP-->>AI: {subscriptionId}
+    AI-->>BE: Geofencing active
+    BE-->>FE: SSE stream (geofencing data)
+    FE->>FE: Draw geofencing circle on map<br/>Add to ActiveSubscriptionsPanel
+
+    User->>FE: "Accept remote incoming WebRTC call"
+    FE->>BE: POST /api/chat/message
+    BE->>AI: Process request
+    AI->>MCP: handle_webrtc_call(action: create)
+    MCP-->>AI: {sessionId}
+    Drone->>Edge: Start WebRTC video stream
+    Edge-->>Drone: Stream acknowledged
+    Edge-->>MCP: Relay media streaming
+    AI-->>BE: WebRTC session active
+    BE-->>FE: SSE stream (video session)
+    FE->>FE: Show video in VideoStreamViewer
+
+    Note over User,Drone: Phase 3: Continuous Monitoring
+    loop Every 10 seconds
+        BE->>MCP: Location Retrieval API
+        MCP->>Drone: Get GPS location
+        Drone-->>MCP: {gps, network locations}
+        MCP-->>BE: {fused location}
+        BE-->>FE: SSE: location_update
+        FE->>FE: Update drone marker on map<br/>Update TelemetryPanel
+    end
+
+    loop Every 30 seconds
+        BE->>MCP: Region Device Count API
+        MCP-->>BE: {deviceCount, heatmapData}
+        BE-->>FE: SSE: region_device_count
+        FE->>FE: Update heatmap overlay
+    end
+
+    User->>FE: "Subscribe to network type changes"
+    FE->>BE: POST /api/chat/message
+    BE->>AI: Process request
+    AI->>MCP: subscribe_connected_network(deviceId)
+    MCP-->>AI: {subscriptionId}
+    AI-->>BE: Network monitoring active
+    BE-->>FE: SSE stream (subscription info)
+    FE->>FE: Add to ActiveSubscriptionsPanel
+
+    Note over BE,Drone: Network event triggers
+    Drone->>MCP: Network type changed (4G → 5G)
+    MCP->>BE: Subscription notification
+    BE-->>FE: SSE: connected_network_type
+    FE->>FE: Show notification<br/>Update NetworkMetricsPanel
+
+    Note over User,Drone: Phase 4: QoS Management
+    User->>FE: "Create QoD session using QOS_M"
+    FE->>BE: POST /api/chat/message
+    BE->>AI: Process request
+    AI->>MCP: get_qos_profiles()
+    MCP-->>AI: {QOS_H, QOS_M, QOS_L}
+    AI->>MCP: create_quality_on_demand(qosProfile: QOS_M)
+    MCP-->>AI: {qodSessionId}
+    AI-->>BE: QoS session active
+    BE-->>FE: SSE stream (QoS info)
+    FE->>FE: Update NetworkMetricsPanel<br/>Show QOS_M badge
+
+    loop Every 10 seconds
+        BE->>MCP: Connectivity Insights API
+        MCP-->>BE: {latency, jitter, packetLoss, throughput}
+        BE-->>FE: SSE: connectivity_insights
+        FE->>FE: Update NetworkMetricsPanel KPIs
+    end
+
+    Note over User,Drone: Phase 5: AI Queries
+    User->>FE: "What is the current location<br/>of the drone?"
+    FE->>BE: POST /api/chat/message
+    BE->>AI: Process query
+    AI->>MCP: Location Retrieval API
+    MCP->>Drone: Get location
+    Drone-->>MCP: {lat, lon, accuracy}
+    MCP-->>AI: Location data
+    AI-->>BE: "Drone is at [coordinates]<br/>within disaster area"
+    BE-->>FE: SSE stream (AI response)
+    FE->>FE: Display in chatbot
+
+    User->>FE: "How many people are in<br/>the disaster area?"
+    FE->>BE: POST /api/chat/message
+    BE->>AI: Process query
+    AI->>MCP: Region Device Count API
+    MCP-->>AI: {deviceCount: 75}
+    AI-->>BE: "Approximately 75 devices<br/>detected in the area"
+    BE-->>FE: SSE stream (AI response)
+    FE->>FE: Display in chatbot
+
+    Note over User,Drone: Phase 6: Mission Completion
+    User->>FE: "Mission complete, cleanup<br/>and close incident"
+    FE->>BE: POST /api/chat/message
+    BE->>AI: Process cleanup request
+
+    AI->>MCP: handle_webrtc_call(action: cancel)
+    MCP->>Edge: Terminate WebRTC session
+    Edge-->>MCP: Session terminated
+    MCP-->>AI: WebRTC call ended
+
+    AI->>MCP: undeploy_edge_application(deploymentId)
+    MCP->>Edge: Undeploy apps
+    Edge-->>MCP: Undeployed
+    MCP-->>AI: Edge cleanup complete
+
+    AI->>MCP: unsubscribe_geofencing(subscriptionId)
+    MCP-->>AI: Subscription cancelled
+
+    AI->>MCP: unsubscribe_connected_network(subscriptionId)
+    MCP-->>AI: Subscription cancelled
+
+    AI-->>BE: All cleanup complete
+    BE-->>FE: SSE stream (cleanup status)
+    FE->>FE: Clear map markers<br/>Switch to Normal Mode<br/>Show StatusPanel
+
+    AI-->>BE: "Mission completed successfully.<br/>Dashboard reset to normal status."
+    BE-->>FE: SSE stream (final message)
+    FE->>FE: Display completion message
 ```
 
 ## Future Enhancements
