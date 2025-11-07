@@ -280,6 +280,30 @@ Operator: Manually switches dashboard back to normal mode
 Dashboard: Returns to normal status, clears incident markers
 ```
 
+## 🗃️ Process Flow Diagram
+
+The following workflow diagram shows the different stages of the disaster response workflow and what actions to perform in each state:
+
+```mermaid
+stateDiagram-v2
+    [*] --> NormalMode : System Start
+    NormalMode --> IntegrityCheck : Conduct preflight integrity check
+    IntegrityCheck --> IncidentReported : Operator reports incident
+    IncidentReported --> GeofencingSetup : Create geofencing subscription
+    GeofencingSetup --> DroneDeployment : Deploy drone to location
+    DroneDeployment --> ArrivalVerification : Verify drone arrival
+    ArrivalVerification --> EdgeDeployment : Deploy edge AI model
+    EdgeDeployment --> VideoStreaming : Accept WebRTC call
+    VideoStreaming --> QoSManagement : Create QoD session
+    QoSManagement --> MissionMonitoring : Monitor operations
+    MissionMonitoring --> QoSManagement : Adjust QoS as needed
+    MissionMonitoring --> VideoStreaming : Handle quality issues
+    MissionMonitoring --> MissionCleanup : Mission complete
+    MissionCleanup --> CleanupOperations : Cancel subscriptions, stop streams, undeploy edge apps
+    CleanupOperations --> NormalMode : Return to normal mode
+    NormalMode --> [*] : System Stop
+```
+
 ## 🔄 Incident Mode Sequence Diagram
 
 The following diagram illustrates the complete incident mode flow from incident reporting through mission completion:
