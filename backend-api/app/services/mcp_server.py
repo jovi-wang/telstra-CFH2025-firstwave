@@ -533,9 +533,49 @@ async def create_quality_on_demand(
     return json.dumps(result_data)
 
 
+@mcp.tool()
+async def integrity_check(phone_number: str, device_id: str = "drone-001") -> str:
+    """
+    Perform pre-flight device integrity check including number verification, SIM swap detection, and device swap detection
+
+    Args:
+        phone_number: Phone number associated with the device (e.g., '+61491570157')
+        device_id: Device identifier (default: 'drone-001')
+
+    Returns:
+        JSON string with:
+        - numberVerified: Boolean indicating if phone number is verified on device
+        - simSwapped: Boolean indicating if SIM swap was detected
+        - deviceSwapped: Boolean indicating if device swap was detected
+        - device_id: Device identifier
+        - phone_number: Phone number checked
+        - timestamp: ISO timestamp of integrity check
+    """
+    log("🔧 Tool called: integrity_check")
+    log(f"   Parameters: phone_number='{phone_number}', device_id='{device_id}'")
+
+    # Mock integrity check data - all checks pass for demo
+    integrity_data = {
+        "numberVerified": True,
+        "simSwapped": False,
+        "deviceSwapped": False,
+        "device_id": device_id,
+        "phone_number": phone_number,
+        "timestamp": datetime.now().isoformat() + "Z",
+    }
+
+    result = json.dumps(integrity_data)
+    log("✅ Tool completed: integrity_check")
+    log(f"   Number Verified: {integrity_data['numberVerified']}")
+    log(f"   SIM Swapped: {integrity_data['simSwapped']}")
+    log(f"   Device Swapped: {integrity_data['deviceSwapped']}")
+
+    return result
+
+
 if __name__ == "__main__":
     log("🚀 CAMARA MCP Server starting...")
     log(
-        "   Available tools: get_qos_profiles, get_connected_network, geocode_address, verify_location, discover_edge_node, deploy_edge_application, undeploy_edge_application, subscribe_geofencing, unsubscribe_geofencing, subscribe_connected_network, unsubscribe_connected_network, handle_webrtc_call, create_quality_on_demand"
+        "   Available tools: get_qos_profiles, get_connected_network, geocode_address, verify_location, discover_edge_node, deploy_edge_application, undeploy_edge_application, subscribe_geofencing, unsubscribe_geofencing, subscribe_connected_network, unsubscribe_connected_network, handle_webrtc_call, create_quality_on_demand, integrity_check"
     )
     mcp.run()

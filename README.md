@@ -6,7 +6,7 @@ Developed for [Telstra's Connected Future Hackathon 2025](https://telstra.bright
 
 ## 🌟 Executive Summary
 
-This system demonstrates an innovative disaster response solution combining drone operations with 12 CAMARA network APIs. The typical workflow involves:
+This system demonstrates an innovative disaster response solution combining drone operations with 15 CAMARA network APIs. The typical workflow involves:
 
 1. **Incident Reporting**: Operator reports bushfire location (street address) in chatbot interface
 2. **Geofencing Setup**: Creates geofencing subscription around disaster area with visual map marker
@@ -132,7 +132,7 @@ Dashboard runs at `http://localhost:5173`
 - Built with **FastMCP** (Model Context Protocol server framework)
 - Runs as subprocess with stdio communication
 - Returns mock data that simulates CAMARA API responses
-- 12 MCP tools
+- 14 MCP tools
 
 **Note**: All CAMARA APIs are mocked - no actual network API calls are made. This demonstrates the chatbot UX and integration patterns for the hackathon.
 
@@ -142,21 +142,29 @@ This section describes the typical flow from the operator's perspective when usi
 
 ### Normal Mode Operations
 
-**1. Query Available QoS Profiles**
+**1. Pre-Flight Integrity Check**
+
+```
+Operator: "Conduct preflight integrity check"
+AI Response: Verifies phone number, checks for SIM/device swaps
+Dashboard: Shows integrity status in StatusPanel (Number Verified, SIM Status, Device Status)
+```
+
+**2. Query Available QoS Profiles**
 
 ```
 Operator: "Check all available QoS profiles"
 AI Response: Lists QOS_H, QOS_M, QOS_L with bandwidth and latency specs
 ```
 
-**2. Check Drone Network Status**
+**3. Check Drone Network Status**
 
 ```
 Operator: "Check drone kit's connected network type"
 AI Response: Returns network type (5G), reachability status (DATA)
 ```
 
-**3. Create Network Type Subscription**
+**4. Create Network Type Subscription**
 
 ```
 Operator: "Create a subscription on device network type change"
@@ -167,7 +175,7 @@ AI Response: Creates subscription, returns subscription ID
 
 **Phase 1: Incident Reporting & Geofencing**
 
-**4. Report Bushfire Location**
+**5. Report Bushfire Location**
 
 ```
 Operator: "A bushfire is reported at 1234 Mount Dandenong Tourist Rd, Kalorama VIC 3766"
@@ -175,7 +183,7 @@ AI Response: Geocodes address → returns lat/lon coordinates (-37.8136, 144.963
 Dashboard: Adds incident marker on map
 ```
 
-**5. Create Geofencing Subscription**
+**6. Create Geofencing Subscription**
 
 ```
 Operator: "Create geofencing subscription at this location with radius of 200m for our drone kit"
@@ -185,7 +193,7 @@ Dashboard: Displays geofencing circle on map
 
 **Phase 2: Drone Arrival & Edge Deployment**
 
-**6. Verify Drone Arrival**
+**7. Verify Drone Arrival**
 
 ```
 Operator: "Check if drone kit has arrived at the bushfire scene"
@@ -193,7 +201,7 @@ AI Response: Verifies drone location within geofencing area
 Dashboard: Displays drone marker on map
 ```
 
-**7. Deploy Edge AI Model**
+**8. Deploy Edge AI Model**
 
 ```
 Operator: "Find closest edge computing node location and then deploy the fire spread prediction image in that node (image id: fire-spread-prediction:v2.0)"
@@ -203,7 +211,7 @@ Dashboard: Adds edge node marker on map, shows deployment status
 
 **Phase 3: Video Streaming & QoS Management**
 
-**8. Accept Incoming WebRTC Call**
+**9. Accept Incoming WebRTC Call**
 
 ```
 System: Incoming WebRTC call event from drone
@@ -212,7 +220,7 @@ AI Response: Creates WebRTC session
 Dashboard: Video player shows live stream, AI analysis overlays appear
 ```
 
-**9. Create Quality on Demand Session**
+**10. Create Quality on Demand Session**
 
 ```
 Operator: "Create a new QoD session for this webrtc media call using QoS_M"
@@ -220,7 +228,7 @@ AI Response: Creates QoD session with QOS_M profile
 Dashboard: QoS badge shows "QOS_M" active status
 ```
 
-**10. Upgrade QoS Profile**
+**11. Upgrade QoS Profile**
 
 ```
 System: Connectivity insights alert - QoS threshold breached
@@ -240,7 +248,7 @@ During the mission, the backend automatically:
 
 **Phase 5: Mission Cleanup**
 
-**11. Terminate WebRTC Session**
+**12. Terminate WebRTC Session**
 
 ```
 Operator: "Cancel this webrtc call session"
@@ -248,7 +256,7 @@ AI Response: Terminates WebRTC session
 Dashboard: Video stream stops
 ```
 
-**12. Undeploy Edge AI Model**
+**13. Undeploy Edge AI Model**
 
 ```
 Operator: "Undeploy fire-spread-prediction:v2.0 model from edge node"
@@ -256,7 +264,7 @@ AI Response: Undeploys model from edge node
 Dashboard: Edge node status updates
 ```
 
-**13. Cancel Subscriptions**
+**14. Cancel Subscriptions**
 
 ```
 Operator: "Cancel the geofencing subscription (b2a18994-5fde-442c-b785-db2d7c9f4fec)"
@@ -265,7 +273,7 @@ AI Response: Deletes subscriptions
 Dashboard: Removes geofencing circle, stops event notifications
 ```
 
-**14. Close Incident**
+**15. Close Incident**
 
 ```
 Operator: Manually switches dashboard back to normal mode
@@ -426,6 +434,6 @@ sequenceDiagram
 
 ## Future Enhancements
 
-- Multi-drone coordination -> CAMARA Network Slice Booking API
-- Integrate with CAMARA Authentication and Fraud Prevention
+- Multi-drone coordination using CAMARA Network Slice Booking API
 - Display drone simulator in dashboard for end-to-end demo
+- Continuous security monitoring with SIM/Device Swap subscriptions during flight

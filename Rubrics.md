@@ -64,11 +64,11 @@ This disaster response drone system delivers quantifiable benefits:
 **Role**: Emergency Services Drone Pilot, 29, Field deployment (various locations)
 **Background**: Commercial drone license (ReOC), operates DJI Matrice 300 RTK with thermal camera in challenging conditions (smoke, wind, poor visibility)
 
-**Pain Points**: Loses video stream in poor 4G coverage areas, constantly switching between drone controller/radio/phone, manual geofencing tracking to avoid restricted airspace, no feedback on video feed quality at command center
+**Pain Points**: Loses video stream in poor 4G coverage areas, constantly switching between drone controller/radio/phone, manual geofencing tracking to avoid restricted airspace, no feedback on video feed quality at command center, concerns about equipment theft and SIM tampering in field conditions
 
-**Our Solution**: Adaptive QoS automatically boosts network quality when connectivity degrades, automated geofencing with visual boundary alerts, real-time dashboard shows 4G/5G connection status, AI-assisted coordination reduces workload.
+**Our Solution**: Adaptive QoS automatically boosts network quality when connectivity degrades, automated geofencing with visual boundary alerts, real-time dashboard shows 4G/5G connection status, AI-assisted coordination reduces workload, pre-flight integrity checks verify drone identity and detect tampering.
 
-**Quote**: _"When flying through smoke, I need to focus on the drone. Having the system automatically manage network quality and geofencing is a game-changer."_
+**Quote**: _"When flying through smoke, I need to focus on the drone. Having the system automatically manage network quality, geofencing, and security checks is a game-changer."_
 
 ### User Journey: Before vs. After
 
@@ -88,10 +88,19 @@ This disaster response drone system delivers quantifiable benefits:
 | Complex technical interfaces              | AI chatbot with natural language commands                        | **Minimal training required**                     |
 | Expensive helicopter surveillance         | Drone + edge AI system                                           | **80% cost reduction ($1K vs $5K/hour)**          |
 | Geofencing compliance burden              | Automated geofencing subscription with visual alerts             | **Zero airspace violations**                      |
+| Drone security & equipment tampering      | Pre-flight integrity check (Number Verify, SIM/Device Swap)      | **Zero unauthorized drone deployments**           |
 
 ## 📡 Rubric 3 - Use of APIs
 
-This solution leverages 12 CAMARA network APIs across 5 categories to deliver a comprehensive disaster response system:
+This solution leverages 15 CAMARA network APIs across 6 categories to deliver a comprehensive disaster response system:
+
+### 🔒 Authentication and Fraud Prevention (3 APIs)
+
+| API                       | Purpose                                                | Use Case                                                                    |
+| ------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------- |
+| **Number Verify**         | Verify phone number is active on device                | Pre-flight authentication to confirm drone device identity before takeoff   |
+| **SIM Swap Detection**    | Detect if SIM card has been swapped recently           | Security check to prevent drone hijacking via SIM swap fraud                |
+| **Device Swap Detection** | Detect if phone number has moved to a different device | Equipment integrity validation to ensure correct drone hardware is deployed |
 
 ### 📍 Location Services (4 APIs)
 
@@ -144,7 +153,9 @@ This solution leverages 12 CAMARA network APIs across 5 categories to deliver a 
 
 6. **Adaptive QoS**: Dynamic QoS profile switching (QOS_H/M/L) ensures video streaming continuity as drone moves between 4G/5G coverage areas
 
-**Key Differentiator**: Traditional drone solutions rely on best-effort connectivity and GPS-only location. CAMARA APIs provide network-aware, guaranteed-performance disaster response—the difference between a demo and a production-ready life-saving system.
+7. **Device Security & Authentication**: Number Verify, SIM Swap, and Device Swap Detection APIs provide pre-flight integrity checks to prevent drone hijacking, equipment tampering, and unauthorized access—critical for mission-critical emergency operations
+
+**Key Differentiator**: Traditional drone solutions rely on best-effort connectivity and GPS-only location. CAMARA APIs provide network-aware, guaranteed-performance disaster response with built-in security authentication—the difference between a demo and a production-ready life-saving system.
 
 ## 🔧 Rubric 4 - Technical Proficiency
 

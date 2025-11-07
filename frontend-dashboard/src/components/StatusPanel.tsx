@@ -7,6 +7,8 @@ import {
   Eye,
   Flame,
   Cloud,
+  ShieldCheck,
+  CheckCircle,
 } from 'lucide-react';
 import { staticQoSProfiles } from '../utils/staticData';
 
@@ -45,6 +47,50 @@ const StatusPanel = () => {
                 </span>
               </div>
               <span className='text-success text-xs font-semibold'>DATA</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Device Integrity Status */}
+      <div className='bg-background rounded-lg p-3 border border-gray-700'>
+        <div className='flex items-center space-x-2 mb-3'>
+          <ShieldCheck className='w-5 h-5 text-primary' />
+          <h3 className='font-semibold text-sm'>Device Integrity Status</h3>
+        </div>
+        <div className='space-y-3'>
+          {/* Number Verified */}
+          <div className='bg-surface rounded p-2 border border-gray-700'>
+            <div className='flex justify-between items-center'>
+              <div className='flex items-center space-x-2'>
+                <CheckCircle className='w-4 h-4 text-success' />
+                <span className='text-sm font-medium'>Number Verified</span>
+              </div>
+              <span className='text-success text-xs font-semibold'>PASS</span>
+            </div>
+          </div>
+          {/* SIM Status */}
+          <div className='bg-surface rounded p-2 border border-gray-700'>
+            <div className='flex justify-between items-center'>
+              <div className='flex items-center space-x-2'>
+                <CheckCircle className='w-4 h-4 text-success' />
+                <span className='text-sm font-medium'>SIM Status</span>
+              </div>
+              <span className='text-success text-xs font-semibold'>
+                No Swap Detected
+              </span>
+            </div>
+          </div>
+          {/* Device Status */}
+          <div className='bg-surface rounded p-2 border border-gray-700'>
+            <div className='flex justify-between items-center'>
+              <div className='flex items-center space-x-2'>
+                <CheckCircle className='w-4 h-4 text-success' />
+                <span className='text-sm font-medium'>Device Status</span>
+              </div>
+              <span className='text-success text-xs font-semibold'>
+                No Swap Detected
+              </span>
             </div>
           </div>
         </div>

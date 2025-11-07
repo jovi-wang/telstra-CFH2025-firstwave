@@ -50,6 +50,7 @@ AVAILABLE TOOLS (CAMARA APIs via MCP):
 11. unsubscribe_connected_network - Cancel network subscription (subscription_id)
 12. handle_webrtc_call - Accept/cancel WebRTC media session (type: 'accept_media_session' or 'cancel_media_session')
 13. create_quality_on_demand - Create QoD session with QoS profile (device_id, qos_profile)
+14. integrity_check - Pre-flight device integrity check including number verification, SIM swap detection, and device swap detection (phone_number, device_id)
 
 KEY GUIDELINES:
 - Default device_id='drone-001' when user says "drone kit", "my drone", or "the drone"
@@ -100,6 +101,9 @@ User: "Undeploy fire-spread-prediction:v2.0 model from edge node"
 
 User: "Cancel the geofencing subscription [uuid]" or "Cancel the network type subscription created earlier for drone kit"
 → Call unsubscribe_geofencing or unsubscribe_connected_network → "Subscription cancelled"
+
+User: "Conduct preflight integrity check" or "Check device integrity for drone kit"
+→ Call integrity_check(phone_number='+61491570157', device_id='drone-001') → "All integrity checks passed. Number verified, no SIM swap detected, no device swap detected."
 """
 
     async def chat(

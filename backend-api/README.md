@@ -137,11 +137,11 @@ curl --request POST \
 ### 5. MCP Server (`app/services/mcp_server.py`)
 
 - Built with **FastMCP** framework
-- Provides 13 MCP tools mapping to 12 CAMARA APIs
+- Provides 14 MCP tools mapping to 15 CAMARA APIs
 - Returns mock data for hackathon demonstration
 - Logs all tool calls to stderr for debugging
 
-## 🛠️ MCP Tools (13 Total)
+## 🛠️ MCP Tools (14 Total)
 
 | Tool                            | CAMARA APIs Covered                                | Description                                                        |
 | ------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------ |
@@ -158,6 +158,7 @@ curl --request POST \
 | `unsubscribe_connected_network` | Connected Network Type Subscriptions               | Unsubscribe from network type changes                              |
 | `handle_webrtc_call`            | WebRTC Call Handling                               | Create or cancel WebRTC session                                    |
 | `create_quality_on_demand`      | Quality on Demand, QoD Subscriptions               | Create QoD session with QoS profile                                |
+| `integrity_check`               | Number Verify, SIM Swap, Device Swap Detection     | Pre-flight integrity check for device authentication               |
 
 **Note**: All tools return mocked data. No actual CAMARA API calls are made.
 
