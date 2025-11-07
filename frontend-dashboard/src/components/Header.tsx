@@ -2,15 +2,12 @@ import { AlertCircle, Thermometer } from 'lucide-react';
 import { staticMissionState } from '../utils/staticData';
 import { useSystemStatusStore } from '../store/systemStatusStore';
 
-interface HeaderProps {
-  isEmergencyMode: boolean;
-  onToggleEmergency: () => void;
-}
-
-const Header = ({ isEmergencyMode, onToggleEmergency }: HeaderProps) => {
+const Header = () => {
   const { incidentType, location, incidentId } = staticMissionState;
 
   // Get system status from store
+  const isEmergencyMode = useSystemStatusStore((state) => state.isEmergencyMode);
+  const toggleEmergencyMode = useSystemStatusStore((state) => state.toggleEmergencyMode);
   const droneActive = useSystemStatusStore((state) => state.droneActive);
   const streamActive = useSystemStatusStore((state) => state.streamActive);
   const edgeProcessing = useSystemStatusStore((state) => state.edgeProcessing);
@@ -77,7 +74,7 @@ const Header = ({ isEmergencyMode, onToggleEmergency }: HeaderProps) => {
 
           {/* Emergency Toggle Button */}
           <button
-            onClick={onToggleEmergency}
+            onClick={toggleEmergencyMode}
             className={`${
               isEmergencyMode
                 ? 'bg-danger hover:bg-red-600'

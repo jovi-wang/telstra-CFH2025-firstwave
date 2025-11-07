@@ -6,6 +6,7 @@ import { create } from 'zustand';
  */
 interface SystemStatusStore {
   // Status flags
+  isEmergencyMode: boolean;
   droneActive: boolean;
   streamActive: boolean;
   edgeProcessing: boolean;
@@ -14,6 +15,8 @@ interface SystemStatusStore {
   qodSessionId: string | null;
 
   // Actions
+  setEmergencyMode: (active: boolean) => void;
+  toggleEmergencyMode: () => void;
   setDroneActive: (active: boolean) => void;
   setStreamActive: (active: boolean) => void;
   setEdgeProcessing: (active: boolean) => void;
@@ -23,8 +26,9 @@ interface SystemStatusStore {
   resetAllStatuses: () => void;
 }
 
-export const useSystemStatusStore = create<SystemStatusStore>((set) => ({
+export const useSystemStatusStore = create<SystemStatusStore>((set, get) => ({
   // Initial state - all inactive
+  isEmergencyMode: false,
   droneActive: false,
   streamActive: false,
   edgeProcessing: false,
@@ -33,6 +37,8 @@ export const useSystemStatusStore = create<SystemStatusStore>((set) => ({
   qodSessionId: null,
 
   // Actions
+  setEmergencyMode: (active) => set({ isEmergencyMode: active }),
+  toggleEmergencyMode: () => set({ isEmergencyMode: !get().isEmergencyMode }),
   setDroneActive: (active) => set({ droneActive: active }),
   setStreamActive: (active) => set({ streamActive: active }),
   setEdgeProcessing: (active) => set({ edgeProcessing: active }),
@@ -41,6 +47,7 @@ export const useSystemStatusStore = create<SystemStatusStore>((set) => ({
   setQodSessionId: (id) => set({ qodSessionId: id }),
   resetAllStatuses: () =>
     set({
+      isEmergencyMode: false,
       droneActive: false,
       streamActive: false,
       edgeProcessing: false,

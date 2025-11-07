@@ -11,6 +11,7 @@ import { useEffect } from 'react';
 import { Layers } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet.heat';
+import { useSystemStatusStore } from '../store/systemStatusStore';
 
 // Fix Leaflet default icon issue
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -185,7 +186,6 @@ const HeatmapLayer = ({ points }: { points: DeviceCountPoint[] }) => {
 };
 
 interface MapViewProps {
-  isEmergencyMode?: boolean;
   center?: { lat: number; lon: number };
   baseLocation?: { lat: number; lon: number; name: string } | null;
   incidentLocation?: { lat: number; lon: number; address: string } | null;
@@ -205,7 +205,6 @@ const MapCenterUpdater = ({ center }: { center: [number, number] }) => {
 };
 
 const MapView = ({
-  isEmergencyMode = false,
   center,
   baseLocation,
   incidentLocation,
@@ -214,6 +213,9 @@ const MapView = ({
   geofencingCircle,
   deviceCountPoints = [],
 }: MapViewProps) => {
+  // Get emergency mode from store
+  const isEmergencyMode = useSystemStatusStore((state) => state.isEmergencyMode);
+
   // Default center to Melbourne CBD if no center provided
   const defaultCenter: [number, number] = [-37.8136, 144.9631];
   const mapCenter: [number, number] = center

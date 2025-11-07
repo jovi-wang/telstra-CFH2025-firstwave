@@ -11,14 +11,13 @@ export interface Subscription {
 
 interface ActiveSubscriptionsPanelProps {
   subscriptions: Subscription[];
-  isEmergencyMode: boolean;
 }
 
 const ActiveSubscriptionsPanel = ({
   subscriptions,
-  isEmergencyMode,
 }: ActiveSubscriptionsPanelProps) => {
   const streamActive = useSystemStatusStore((state) => state.streamActive);
+  const isEmergencyMode = useSystemStatusStore((state) => state.isEmergencyMode);
   const formatParameters = (params?: Record<string, any>) => {
     if (!params) return null;
 

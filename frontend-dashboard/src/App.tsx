@@ -11,17 +11,24 @@ import NotificationContainer from './components/NotificationContainer';
 import ActiveSubscriptionsPanel from './components/ActiveSubscriptionsPanel';
 import type { Subscription } from './components/ActiveSubscriptionsPanel';
 import { useRegionDeviceStore } from './store/regionDeviceStore';
+import { useSystemStatusStore } from './store/systemStatusStore';
 import eventStreamService from './services/eventStreamService';
 
-// Melbourne CBD base location (First Wave HQ)
+// Melbourne CBD base location (Fire Station HQ)
 const MELBOURNE_CBD_BASE = {
   lat: -37.8136,
   lon: 144.9631,
-  name: 'First Wave Base - Crew & Equipment',
+  name: 'Fire Station HQ',
 };
 
 function App() {
-  const [isEmergencyMode, setIsEmergencyMode] = useState(false);
+  // System status store
+  const isEmergencyMode = useSystemStatusStore(
+    (state) => state.isEmergencyMode
+  );
+  const setEmergencyMode = useSystemStatusStore(
+    (state) => state.setEmergencyMode
+  );
 
   // Region device count store
   const { deviceCountPoints, addDeviceCountPoint } = useRegionDeviceStore();
@@ -92,10 +99,6 @@ function App() {
     };
   }, [addDeviceCountPoint, droneKitLocation]);
 
-  const toggleEmergencyMode = () => {
-    setIsEmergencyMode(!isEmergencyMode);
-  };
-
   // Move map to address and set incident marker
   const moveMapToAddress = (address: string, lat: number, lon: number) => {
     setMapCenter({ lat, lon });
@@ -163,7 +166,7 @@ function App() {
     console.log('🔄 Resetting dashboard to initial state');
 
     // Reset emergency mode to normal
-    setIsEmergencyMode(false);
+    setEmergencyMode(false);
 
     // Reset map to base location
     setMapCenter({ lat: MELBOURNE_CBD_BASE.lat, lon: MELBOURNE_CBD_BASE.lon });
@@ -188,10 +191,7 @@ function App() {
       <NotificationContainer />
 
       {/* Header */}
-      <Header
-        isEmergencyMode={isEmergencyMode}
-        onToggleEmergency={toggleEmergencyMode}
-      />
+      <Header />
 
       {/* Main Content Area - Conditional Layout */}
       {isEmergencyMode ? (
@@ -211,7 +211,6 @@ function App() {
                   style={{ aspectRatio: '8/9', width: '100%' }}
                 >
                   <MapView
-                    isEmergencyMode={isEmergencyMode}
                     center={mapCenter}
                     baseLocation={baseLocation}
                     incidentLocation={incidentLocation}
@@ -234,7 +233,6 @@ function App() {
                 >
                   <ActiveSubscriptionsPanel
                     subscriptions={activeSubscriptions}
-                    isEmergencyMode={isEmergencyMode}
                   />
                 </div>
 
@@ -267,7 +265,7 @@ function App() {
                     style={{ minHeight: '200px' }}
                   >
                     <div className='h-full overflow-y-auto'>
-                      <NetworkMetricsPanel isEmergencyMode={isEmergencyMode} />
+                      <NetworkMetricsPanel />
                     </div>
                   </div>
 
@@ -312,7 +310,6 @@ function App() {
           {/* Map View - Takes 2 columns */}
           <div className='col-span-2 bg-surface rounded-lg overflow-hidden border border-gray-700 min-h-0'>
             <MapView
-              isEmergencyMode={isEmergencyMode}
               center={mapCenter}
               baseLocation={baseLocation}
               incidentLocation={incidentLocation}
