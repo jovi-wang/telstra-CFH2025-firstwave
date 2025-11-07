@@ -286,8 +286,8 @@ const AIAssistantChatbot = ({
                 }
 
                 if (refLocation) {
-                  const edgeLat = refLocation.lat + 0.015; // North
-                  const edgeLon = refLocation.lon - 0.015; // West
+                  const edgeLat = refLocation.lat + 0.01; // North
+                  const edgeLon = refLocation.lon - 0.01; // West
                   onAddEdgeNodeMarker(
                     edgeLat,
                     edgeLon,

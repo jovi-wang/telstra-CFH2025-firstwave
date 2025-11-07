@@ -106,6 +106,78 @@ interface DeviceCountPoint {
   device_count: number;
 }
 
+// Map Legend Component - Memoized for performance
+const MapLegend = memo(() => (
+  <div className='absolute bottom-4 left-4 z-[1000] bg-surface bg-opacity-95 p-3 rounded-lg shadow-lg text-xs'>
+    <div className='font-semibold mb-2 flex items-center space-x-2'>
+      <Layers className='w-4 h-4' />
+      <span>Map Legend</span>
+    </div>
+    <div className='space-y-2'>
+      <div className='flex items-center space-x-2'>
+        <svg
+          width='16'
+          height='20'
+          viewBox='0 0 25 41'
+          xmlns='http://www.w3.org/2000/svg'
+        >
+          <path
+            d='M12.5 0C5.6 0 0 5.6 0 12.5C0 19.4 12.5 41 12.5 41C12.5 41 25 19.4 25 12.5C25 5.6 19.4 0 12.5 0Z'
+            fill='#ef4444'
+            stroke='#991b1b'
+            strokeWidth='2'
+          />
+          <circle cx='12.5' cy='12.5' r='5' fill='white' />
+        </svg>
+        <span>Incident Location</span>
+      </div>
+      <div className='flex items-center space-x-2'>
+        <svg
+          width='16'
+          height='20'
+          viewBox='0 0 25 41'
+          xmlns='http://www.w3.org/2000/svg'
+        >
+          <path
+            d='M12.5 0C5.6 0 0 5.6 0 12.5C0 19.4 12.5 41 12.5 41C12.5 41 25 19.4 25 12.5C25 5.6 19.4 0 12.5 0Z'
+            fill='#3b82f6'
+            stroke='#1e40af'
+            strokeWidth='2'
+          />
+          <circle cx='12.5' cy='12.5' r='5' fill='white' />
+        </svg>
+        <span>Drone Kit Location</span>
+      </div>
+      <div className='flex items-center space-x-2'>
+        <svg
+          width='16'
+          height='20'
+          viewBox='0 0 25 41'
+          xmlns='http://www.w3.org/2000/svg'
+        >
+          <path
+            d='M12.5 0C5.6 0 0 5.6 0 12.5C0 19.4 12.5 41 12.5 41C12.5 41 25 19.4 25 12.5C25 5.6 19.4 0 12.5 0Z'
+            fill='#10b981'
+            stroke='#065f46'
+            strokeWidth='2'
+          />
+          <circle cx='12.5' cy='12.5' r='5' fill='white' />
+        </svg>
+        <span>Edge Node</span>
+      </div>
+      <div className='flex items-center space-x-2'>
+        <div
+          className='w-4 h-4 border-2 rounded-full'
+          style={{ borderColor: '#8b5cf6', borderStyle: 'dashed' }}
+        ></div>
+        <span>Geofencing Boundary</span>
+      </div>
+    </div>
+  </div>
+));
+
+MapLegend.displayName = 'MapLegend';
+
 // Custom HeatmapLayer component with tooltip
 const HeatmapLayer = ({ points }: { points: DeviceCountPoint[] }) => {
   const map = useMap();
@@ -227,74 +299,7 @@ const MapView = ({
   return (
     <div className='relative w-full h-full'>
       {/* Legend - Only show in emergency mode */}
-      {isEmergencyMode && (
-        <div className='absolute bottom-4 left-4 z-[1000] bg-surface bg-opacity-95 p-3 rounded-lg shadow-lg text-xs'>
-          <div className='font-semibold mb-2 flex items-center space-x-2'>
-            <Layers className='w-4 h-4' />
-            <span>Map Legend</span>
-          </div>
-          <div className='space-y-2'>
-            <div className='flex items-center space-x-2'>
-              <svg
-                width='16'
-                height='20'
-                viewBox='0 0 25 41'
-                xmlns='http://www.w3.org/2000/svg'
-              >
-                <path
-                  d='M12.5 0C5.6 0 0 5.6 0 12.5C0 19.4 12.5 41 12.5 41C12.5 41 25 19.4 25 12.5C25 5.6 19.4 0 12.5 0Z'
-                  fill='#ef4444'
-                  stroke='#991b1b'
-                  strokeWidth='2'
-                />
-                <circle cx='12.5' cy='12.5' r='5' fill='white' />
-              </svg>
-              <span>Incident Location</span>
-            </div>
-            <div className='flex items-center space-x-2'>
-              <svg
-                width='16'
-                height='20'
-                viewBox='0 0 25 41'
-                xmlns='http://www.w3.org/2000/svg'
-              >
-                <path
-                  d='M12.5 0C5.6 0 0 5.6 0 12.5C0 19.4 12.5 41 12.5 41C12.5 41 25 19.4 25 12.5C25 5.6 19.4 0 12.5 0Z'
-                  fill='#3b82f6'
-                  stroke='#1e40af'
-                  strokeWidth='2'
-                />
-                <circle cx='12.5' cy='12.5' r='5' fill='white' />
-              </svg>
-              <span>Drone Kit Location</span>
-            </div>
-            <div className='flex items-center space-x-2'>
-              <svg
-                width='16'
-                height='20'
-                viewBox='0 0 25 41'
-                xmlns='http://www.w3.org/2000/svg'
-              >
-                <path
-                  d='M12.5 0C5.6 0 0 5.6 0 12.5C0 19.4 12.5 41 12.5 41C12.5 41 25 19.4 25 12.5C25 5.6 19.4 0 12.5 0Z'
-                  fill='#10b981'
-                  stroke='#065f46'
-                  strokeWidth='2'
-                />
-                <circle cx='12.5' cy='12.5' r='5' fill='white' />
-              </svg>
-              <span>Edge Node</span>
-            </div>
-            <div className='flex items-center space-x-2'>
-              <div
-                className='w-4 h-4 border-2 rounded-full'
-                style={{ borderColor: '#8b5cf6', borderStyle: 'dashed' }}
-              ></div>
-              <span>Geofencing Boundary</span>
-            </div>
-          </div>
-        </div>
-      )}
+      {isEmergencyMode && <MapLegend />}
 
       {/* Map Container */}
       <MapContainer

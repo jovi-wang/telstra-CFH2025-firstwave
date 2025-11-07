@@ -83,27 +83,6 @@ function App() {
     };
   }, [addDeviceCountPoint, droneKitLocation]);
 
-  // Wrap store actions with useCallback for stable references
-  const moveMapToAddress = useCallback(moveMapToAddressStore, [
-    moveMapToAddressStore,
-  ]);
-
-  const addDroneKitMarker = useCallback(addDroneKitMarkerStore, [
-    addDroneKitMarkerStore,
-  ]);
-
-  const addEdgeNodeMarker = useCallback(addEdgeNodeMarkerStore, [
-    addEdgeNodeMarkerStore,
-  ]);
-
-  const addGeofencingCircle = useCallback(addGeofencingCircleStore, [
-    addGeofencingCircleStore,
-  ]);
-
-  const addSubscription = useCallback(addSubscriptionStore, [
-    addSubscriptionStore,
-  ]);
-
   // Get store actions from systemStatusStore
   const updateEdgeDeployment = useSystemStatusStore(
     (state) => state.updateEdgeDeployment
@@ -143,13 +122,13 @@ function App() {
   const aiAssistantChatbot = useMemo(
     () => (
       <AIAssistantChatbot
-        onMoveMap={moveMapToAddress}
-        onAddDroneKitMarker={addDroneKitMarker}
-        onAddEdgeNodeMarker={addEdgeNodeMarker}
+        onMoveMap={moveMapToAddressStore}
+        onAddDroneKitMarker={addDroneKitMarkerStore}
+        onAddEdgeNodeMarker={addEdgeNodeMarkerStore}
         onUpdateEdgeDeployment={updateEdgeDeployment}
         onClearEdgeDeployment={clearEdgeDeployment}
-        onAddGeofencingCircle={addGeofencingCircle}
-        onAddSubscription={addSubscription}
+        onAddGeofencingCircle={addGeofencingCircleStore}
+        onAddSubscription={addSubscriptionStore}
         onRemoveSubscription={removeSubscription}
         onResetDashboard={resetDashboard}
         droneKitLocation={droneKitLocation}
@@ -158,13 +137,13 @@ function App() {
       />
     ),
     [
-      moveMapToAddress,
-      addDroneKitMarker,
-      addEdgeNodeMarker,
+      moveMapToAddressStore,
+      addDroneKitMarkerStore,
+      addEdgeNodeMarkerStore,
       updateEdgeDeployment,
       clearEdgeDeployment,
-      addGeofencingCircle,
-      addSubscription,
+      addGeofencingCircleStore,
+      addSubscriptionStore,
       removeSubscription,
       resetDashboard,
       droneKitLocation,
