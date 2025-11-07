@@ -1,5 +1,5 @@
-import { Video, Maximize, PlayCircle, VideoOff } from 'lucide-react';
-import { useRef, useEffect, useState } from 'react';
+import { Video, VideoOff } from 'lucide-react';
+import { useRef, useEffect, useState, memo } from 'react';
 import { useSystemStatusStore } from '../store/systemStatusStore';
 
 type VideoQuality = '144p' | '240p' | '360p' | '1080p';
@@ -16,7 +16,7 @@ const VideoStreamViewer = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [currentQuality, setCurrentQuality] = useState<VideoQuality>('240p');
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | undefined>(undefined);
 
   // Determine quality based on QoS profile
   const getQualityFromQoS = (qosProfile: string): VideoQuality => {
@@ -24,7 +24,6 @@ const VideoStreamViewer = () => {
       case 'QOS_H':
         return '1080p';
       case 'QOS_M':
-        return '360p';
       case 'QOS_L':
         return '240p';
       default:
@@ -182,4 +181,4 @@ const VideoStreamViewer = () => {
   );
 };
 
-export default VideoStreamViewer;
+export default memo(VideoStreamViewer);

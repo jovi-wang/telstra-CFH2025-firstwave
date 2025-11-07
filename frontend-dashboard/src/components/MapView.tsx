@@ -7,7 +7,7 @@ import {
   useMap,
 } from 'react-leaflet';
 import { Icon } from 'leaflet';
-import { useEffect } from 'react';
+import { useEffect, memo } from 'react';
 import { Layers } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet.heat';
@@ -214,7 +214,9 @@ const MapView = ({
   deviceCountPoints = [],
 }: MapViewProps) => {
   // Get emergency mode from store
-  const isEmergencyMode = useSystemStatusStore((state) => state.isEmergencyMode);
+  const isEmergencyMode = useSystemStatusStore(
+    (state) => state.isEmergencyMode
+  );
 
   // Default center to Melbourne CBD if no center provided
   const defaultCenter: [number, number] = [-37.8136, 144.9631];
@@ -420,4 +422,4 @@ const MapView = ({
   );
 };
 
-export default MapView;
+export default memo(MapView);

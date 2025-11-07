@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Activity, TrendingUp, TrendingDown, Signal } from 'lucide-react';
 import {
   LineChart,
@@ -277,4 +278,4 @@ const NetworkMetricsPanel = () => {
   );
 };
 
-export default NetworkMetricsPanel;
+export default memo(NetworkMetricsPanel);

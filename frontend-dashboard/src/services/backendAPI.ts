@@ -6,41 +6,46 @@
 const BACKEND_URL = 'http://localhost:4000';
 
 /**
- * SSE Event types from backend
+ * Event data structures for each event type
  */
-export type SSEEventType =
-  | 'message_start'
-  | 'content_delta'
-  | 'tool_call'
-  | 'tool_result'
-  | 'tool_error'
-  | 'message_complete'
-  | 'mission_complete'
-  | 'error';
+export interface MessageStartData {
+  conversation_id: string;
+}
 
-/**
- * Stream event structure
- */
-export type StreamEvent = {
-  type: SSEEventType;
-  data: any;
-};
+export interface ContentDeltaData {
+  content: string;
+}
 
-/**
- * Tool call data structure
- */
-export interface ToolCall {
+export interface ToolCallData {
   tool: string;
-  arguments: Record<string, any>;
+  arguments: Record<string, unknown>;
+}
+
+export interface ToolResultData {
+  tool: string;
+  result: unknown;
+}
+
+export interface ToolErrorData {
+  error: string;
+}
+
+export interface ErrorData {
+  error: string;
 }
 
 /**
- * Tool result data structure
+ * Stream event as discriminated union
  */
-export interface ToolResult {
-  tool: string;
-  result: any;
-}
+export type StreamEvent =
+  | { type: 'message_start'; data: MessageStartData }
+  | { type: 'content_delta'; data: ContentDeltaData }
+  | { type: 'tool_call'; data: ToolCallData }
+  | { type: 'tool_result'; data: ToolResultData }
+  | { type: 'tool_error'; data: ToolErrorData }
+  | { type: 'message_complete'; data: Record<string, never> }
+  | { type: 'mission_complete'; data: Record<string, never> }
+  | { type: 'error'; data: ErrorData };
 
 /**
  * Send a chat message and stream the response via SSE
@@ -114,10 +119,11 @@ export const sendMessage = async (
         if (eventType && eventData) {
           try {
             const parsedData = JSON.parse(eventData);
+            // TypeScript will infer the correct StreamEvent type from the discriminated union
             onEvent({
-              type: eventType as SSEEventType,
+              type: eventType,
               data: parsedData,
-            });
+            } as StreamEvent);
           } catch (parseError) {
             console.error('Failed to parse SSE data:', eventData, parseError);
           }

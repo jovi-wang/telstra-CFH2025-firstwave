@@ -53,13 +53,6 @@ export interface QoSProfile {
   packetErrorLossRate: number; // percentage
 }
 
-export interface QoSStatus {
-  profile: 'QOS_H' | 'QOS_L' | 'QOS_M';
-  status: 'active' | 'degraded' | 'expired';
-  guaranteedBandwidth: number; // bps
-  sessionExpiry: string; // ISO timestamp
-}
-
 // Edge analysis types
 export interface HeatSignature {
   id: string;
@@ -89,24 +82,6 @@ export interface EdgeAnalysisResults {
   };
 }
 
-// Population density types
-export interface PopulationDensityCell {
-  latitude: number;
-  longitude: number;
-  deviceCount: number;
-  densityLevel: 'low' | 'medium' | 'high';
-}
-
-export interface PopulationDensityData {
-  gridCells: PopulationDensityCell[];
-  totalDevices: number;
-  peakDensity: {
-    latitude: number;
-    longitude: number;
-    deviceCount: number;
-  };
-}
-
 // Mission types
 export interface MissionState {
   incidentId: string;
@@ -125,21 +100,9 @@ export interface Alert {
   timestamp: string;
 }
 
-// Geofence types
-export interface GeofencePolygon {
-  coordinates: number[][][]; // GeoJSON polygon format
-}
-
 // AI Chat types
-export interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: string;
-  toolCalls?: ToolCall[];
-}
-
 export interface ToolCall {
   tool: string;
-  parameters: Record<string, any>;
-  result: any;
+  arguments: Record<string, unknown>;
+  result?: unknown;
 }

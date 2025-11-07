@@ -1,15 +1,14 @@
+import { memo } from 'react';
 import { Flame, TrendingUp, Server, Package } from 'lucide-react';
 import { staticEdgeAnalysis } from '../utils/staticData';
-import { useSystemStatusStore } from '../store/systemStatusStore';
+import {
+  useSystemStatusStore,
+  type EdgeDeployment,
+} from '../store/systemStatusStore';
 
 interface EdgeAnalysisResultsProps {
   edgeNodeLocation?: { lat: number; lon: number; name: string } | null;
-  edgeDeployment?: {
-    deploymentId: string;
-    imageId: string;
-    zoneName: string;
-    status: string;
-  } | null;
+  edgeDeployment?: EdgeDeployment | null;
 }
 
 const EdgeAnalysisResults = ({
@@ -256,4 +255,4 @@ const EdgeAnalysisResults = ({
   );
 };
 
-export default EdgeAnalysisResults;
+export default memo(EdgeAnalysisResults);

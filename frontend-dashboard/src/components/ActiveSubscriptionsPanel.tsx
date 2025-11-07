@@ -1,13 +1,7 @@
+import { memo } from 'react';
 import { Bell, CheckCircle2 } from 'lucide-react';
 import { useSystemStatusStore } from '../store/systemStatusStore';
-
-export interface Subscription {
-  id: string;
-  type: string;
-  deviceId: string;
-  createdAt: string;
-  parameters?: Record<string, any>;
-}
+import { type Subscription } from '../store/subscriptionsStore';
 
 interface ActiveSubscriptionsPanelProps {
   subscriptions: Subscription[];
@@ -17,8 +11,10 @@ const ActiveSubscriptionsPanel = ({
   subscriptions,
 }: ActiveSubscriptionsPanelProps) => {
   const streamActive = useSystemStatusStore((state) => state.streamActive);
-  const isEmergencyMode = useSystemStatusStore((state) => state.isEmergencyMode);
-  const formatParameters = (params?: Record<string, any>) => {
+  const isEmergencyMode = useSystemStatusStore(
+    (state) => state.isEmergencyMode
+  );
+  const formatParameters = (params?: Record<string, unknown>) => {
     if (!params) return null;
 
     return Object.entries(params)
@@ -130,4 +126,4 @@ const ActiveSubscriptionsPanel = ({
   );
 };
 
-export default ActiveSubscriptionsPanel;
+export default memo(ActiveSubscriptionsPanel);

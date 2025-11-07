@@ -2,23 +2,14 @@ import type {
   DroneTelemetry,
   NetworkMetrics,
   QoSProfile,
-  QoSStatus,
   EdgeAnalysisResults,
-  PopulationDensityData,
   MissionState,
-  GeofencePolygon,
-  ChatMessage,
 } from '../types';
 
 // Test coordinates (Dandenong Ranges, VIC, Australia)
 export const INCIDENT_LOCATION = {
   lat: -37.8136,
   lon: 144.9631,
-};
-
-export const EDGE_NODE_LOCATION = {
-  lat: -37.815,
-  lon: 144.965,
 };
 
 // Static drone telemetry
@@ -85,14 +76,6 @@ export const staticQoSProfiles: QoSProfile[] = [
   },
 ];
 
-// Static QoS status
-export const staticQoSStatus: QoSStatus = {
-  profile: 'QOS_L',
-  status: 'active',
-  guaranteedBandwidth: 25000000, // 25 Mbps
-  sessionExpiry: new Date(Date.now() + 3600000).toISOString(),
-};
-
 // Static edge node analysis results
 export const staticEdgeAnalysis: EdgeAnalysisResults = {
   heatSignatures: [
@@ -134,61 +117,6 @@ export const staticEdgeAnalysis: EdgeAnalysisResults = {
   },
 };
 
-// Static population density data
-export const staticPopulationDensity: PopulationDensityData = {
-  gridCells: [
-    {
-      latitude: -37.8136,
-      longitude: 144.9631,
-      deviceCount: 450,
-      densityLevel: 'high',
-    },
-    {
-      latitude: -37.814,
-      longitude: 144.9635,
-      deviceCount: 280,
-      densityLevel: 'medium',
-    },
-    {
-      latitude: -37.813,
-      longitude: 144.9625,
-      deviceCount: 120,
-      densityLevel: 'low',
-    },
-    {
-      latitude: -37.8145,
-      longitude: 144.964,
-      deviceCount: 380,
-      densityLevel: 'high',
-    },
-    {
-      latitude: -37.8135,
-      longitude: 144.962,
-      deviceCount: 90,
-      densityLevel: 'low',
-    },
-  ],
-  totalDevices: 1250,
-  peakDensity: {
-    latitude: -37.8136,
-    longitude: 144.9631,
-    deviceCount: 450,
-  },
-};
-
-// Static geofence polygon
-export const staticGeofence: GeofencePolygon = {
-  coordinates: [
-    [
-      [144.96, -37.81],
-      [144.97, -37.81],
-      [144.97, -37.82],
-      [144.96, -37.82],
-      [144.96, -37.81],
-    ],
-  ],
-};
-
 // Static mission state
 export const staticMissionState: MissionState = {
   incidentId: 'INC-2025-001',
@@ -206,46 +134,6 @@ export const staticMissionState: MissionState = {
     },
   ],
 };
-
-// Static chat messages
-export const staticChatMessages: ChatMessage[] = [
-  {
-    role: 'assistant',
-    content:
-      'Mission initialized. I can help you with queries about population density, drone location, stream quality, and more.',
-    timestamp: new Date(Date.now() - 900000).toISOString(),
-  },
-  {
-    role: 'user',
-    content: 'How many people are near the fire?',
-    timestamp: new Date(Date.now() - 600000).toISOString(),
-  },
-  {
-    role: 'assistant',
-    content:
-      'There are approximately 1,250 devices detected within 5km of the incident. The highest concentration is 450 devices at -37.8136, 144.9631.',
-    timestamp: new Date(Date.now() - 580000).toISOString(),
-    toolCalls: [
-      {
-        tool: 'Population Density API',
-        parameters: {
-          location: { lat: -37.8136, lon: 144.9631 },
-          radius: 5000,
-        },
-        result: { totalDevices: 1250 },
-      },
-    ],
-  },
-];
-
-// Drone flight path (for trail visualization)
-export const staticFlightPath = [
-  { lat: -37.8136, lon: 144.9631, timestamp: Date.now() - 600000 },
-  { lat: -37.8137, lon: 144.9632, timestamp: Date.now() - 540000 },
-  { lat: -37.8138, lon: 144.9633, timestamp: Date.now() - 480000 },
-  { lat: -37.8139, lon: 144.9634, timestamp: Date.now() - 420000 },
-  { lat: -37.814, lon: 144.9635, timestamp: Date.now() },
-];
 
 // Quality history for charts
 export const staticQualityHistory = [

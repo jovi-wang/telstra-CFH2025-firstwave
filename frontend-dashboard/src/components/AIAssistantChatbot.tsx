@@ -18,7 +18,7 @@ import type { SystemEvent } from '../services/eventStreamService';
 import { useChatStore } from '../store/chatStore';
 import type { ChatMessage } from '../store/chatStore';
 import { useSystemStatusStore } from '../store/systemStatusStore';
-import type { Subscription } from './ActiveSubscriptionsPanel';
+import type { Subscription } from '../store/subscriptionsStore';
 
 interface AIAssistantChatbotProps {
   onMoveMap?: (address: string, lat: number, lon: number) => void;
@@ -147,7 +147,7 @@ const AIAssistantChatbot = ({
     return () => {
       eventStreamService.off('all', handleSystemEvent);
     };
-  }, []);
+  }, [addMessage]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -180,8 +180,8 @@ const AIAssistantChatbot = ({
     // Track current tool being called
     let currentToolCall: {
       tool: string;
-      arguments: Record<string, any>;
-      result?: any;
+      arguments: Record<string, unknown>;
+      result?: unknown;
     } | null = null;
 
     try {
@@ -230,7 +230,7 @@ const AIAssistantChatbot = ({
               onMoveMap &&
               event.data.result
             ) {
-              const result = event.data.result;
+              const result = event.data.result as any;
               if (result.latitude && result.longitude && !result.error) {
                 onMoveMap(
                   result.address || result.display_name,
@@ -242,7 +242,7 @@ const AIAssistantChatbot = ({
 
             // Check if this is verify_location tool and add drone kit marker
             if (event.data.tool === 'verify_location' && event.data.result) {
-              const result = event.data.result;
+              const result = event.data.result as any;
               if (result.verificationResult === 'TRUE') {
                 // Set drone active status
                 setDroneActive(true);
@@ -256,7 +256,10 @@ const AIAssistantChatbot = ({
                   if (latitude && longitude) {
                     // Add drone kit marker (also sets location for heatmap)
                     if (onAddDroneKitMarker) {
-                      onAddDroneKitMarker(latitude, longitude);
+                      onAddDroneKitMarker(
+                        latitude as number,
+                        longitude as number
+                      );
                     }
                   }
                 }
@@ -269,7 +272,7 @@ const AIAssistantChatbot = ({
               onAddEdgeNodeMarker &&
               event.data.result
             ) {
-              const result = event.data.result;
+              const result = event.data.result as any;
               if (result.edgeCloudZoneName && !result.error) {
                 // Determine reference location: droneKitLocation > incidentLocation > baseLocation
                 let refLocation = null;
@@ -300,7 +303,7 @@ const AIAssistantChatbot = ({
               onUpdateEdgeDeployment &&
               event.data.result
             ) {
-              const result = event.data.result;
+              const result = event.data.result as any;
               if (result.deployment_id && result.status && !result.error) {
                 onUpdateEdgeDeployment(
                   result.deployment_id,
@@ -330,7 +333,7 @@ const AIAssistantChatbot = ({
               event.data.tool === 'subscribe_geofencing' &&
               event.data.result
             ) {
-              const result = event.data.result;
+              const result = event.data.result as any;
               if (
                 result.subscription_id &&
                 result.latitude &&
@@ -372,10 +375,10 @@ const AIAssistantChatbot = ({
             ) {
               // Get subscription_id from tool arguments
               if (currentToolCall && currentToolCall.arguments) {
-                const subscriptionId =
-                  currentToolCall.arguments.subscription_id;
+                const subscriptionId = (currentToolCall.arguments as any)
+                  .subscription_id;
                 if (subscriptionId && onRemoveSubscription) {
-                  onRemoveSubscription(subscriptionId);
+                  onRemoveSubscription(subscriptionId as string);
                 }
               }
             }
@@ -385,7 +388,7 @@ const AIAssistantChatbot = ({
               event.data.tool === 'subscribe_connected_network' &&
               event.data.result
             ) {
-              const result = event.data.result;
+              const result = event.data.result as any;
               if (result.subscription_id && result.device_id && !result.error) {
                 // Add subscription to active subscriptions list
                 if (onAddSubscription) {
@@ -407,10 +410,10 @@ const AIAssistantChatbot = ({
             ) {
               // Get subscription_id from tool arguments
               if (currentToolCall && currentToolCall.arguments) {
-                const subscriptionId =
-                  currentToolCall.arguments.subscription_id;
+                const subscriptionId = (currentToolCall.arguments as any)
+                  .subscription_id;
                 if (subscriptionId && onRemoveSubscription) {
-                  onRemoveSubscription(subscriptionId);
+                  onRemoveSubscription(subscriptionId as string);
                 }
               }
             }
@@ -425,11 +428,12 @@ const AIAssistantChatbot = ({
                 (tc) => tc.tool === 'handle_webrtc_call'
               );
               if (toolCall && toolCall.arguments) {
-                const { type } = toolCall.arguments;
-                const result = event.data.result;
+                const { type } = toolCall.arguments as any;
+                const result = event.data.result as any;
 
                 if (
                   type === 'accept_media_session' &&
+                  result &&
                   result.sdp &&
                   !result.error
                 ) {
@@ -437,7 +441,7 @@ const AIAssistantChatbot = ({
                   setStreamActive(true);
                   setTimeout(() => {
                     setEdgeProcessing(true);
-                  }, 15000);
+                  }, 30 * 1000);
                   // Store session ID
                   if (result.session_id) {
                     setSessionId(result.session_id);
@@ -457,8 +461,9 @@ const AIAssistantChatbot = ({
               event.data.tool === 'create_quality_on_demand' &&
               event.data.result !== undefined
             ) {
-              const result = event.data.result;
+              const result = event.data.result as any;
               if (
+                result &&
                 result.qos_profile &&
                 result.status === 'active' &&
                 !result.error
@@ -485,7 +490,9 @@ const AIAssistantChatbot = ({
             }
           } else if (event.type === 'mission_complete') {
             // Mission completion - reset all dashboard state after 2 second delay
-            console.log('🎯 Mission complete event received - resetting dashboard in 2 seconds');
+            console.log(
+              '🎯 Mission complete event received - resetting dashboard in 2 seconds'
+            );
 
             // Keep typing indicator active for 2 seconds
             setIsTyping(true);
@@ -661,7 +668,9 @@ const AIAssistantChatbot = ({
 
                           const hasResult = !!tool.result;
                           const hasError =
-                            hasResult && tool.result && tool.result.error;
+                            hasResult &&
+                            tool.result &&
+                            (tool.result as any).error;
                           const toolKey = getToolKey(index, toolIndex);
                           const isCollapsed = collapsedTools.has(toolKey);
 
@@ -768,29 +777,33 @@ const AIAssistantChatbot = ({
                                       <div className='bg-background rounded p-2 max-h-48 overflow-y-auto'>
                                         {/* Format result as key-value pairs if it's an object */}
                                         {typeof tool.result === 'object' &&
+                                        tool.result !== null &&
                                         !Array.isArray(tool.result) ? (
                                           <div className='space-y-1.5'>
-                                            {Object.entries(tool.result).map(
-                                              ([key, value]) => (
-                                                <div
-                                                  key={key}
-                                                  className='flex items-start space-x-2 text-sm'
-                                                >
-                                                  <span className='text-gray-300 font-mono min-w-[100px]'>
-                                                    {key}:
-                                                  </span>
-                                                  <span className='text-gray-400 font-mono flex-1'>
-                                                    {typeof value === 'object'
-                                                      ? JSON.stringify(
-                                                          value,
-                                                          null,
-                                                          2
-                                                        )
-                                                      : String(value)}
-                                                  </span>
-                                                </div>
-                                              )
-                                            )}
+                                            {Object.entries(
+                                              tool.result as Record<
+                                                string,
+                                                unknown
+                                              >
+                                            ).map(([key, value]) => (
+                                              <div
+                                                key={key}
+                                                className='flex items-start space-x-2 text-sm'
+                                              >
+                                                <span className='text-gray-300 font-mono min-w-[100px]'>
+                                                  {key}:
+                                                </span>
+                                                <span className='text-gray-400 font-mono flex-1'>
+                                                  {typeof value === 'object'
+                                                    ? JSON.stringify(
+                                                        value,
+                                                        null,
+                                                        2
+                                                      )
+                                                    : String(value)}
+                                                </span>
+                                              </div>
+                                            ))}
                                           </div>
                                         ) : (
                                           <pre className='text-sm text-gray-300 font-mono whitespace-pre-wrap'>
@@ -814,7 +827,7 @@ const AIAssistantChatbot = ({
                                       </div>
                                       <div className='bg-gray-900 border-l-4 border-red-500 rounded p-3'>
                                         <p className='text-sm text-red-300 font-mono break-words'>
-                                          {tool.result.error}
+                                          {(tool.result as any).error}
                                         </p>
                                       </div>
                                     </div>

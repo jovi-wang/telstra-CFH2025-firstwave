@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Gauge, Navigation, Battery } from 'lucide-react';
 import { staticDroneTelemetry } from '../utils/staticData';
 import { useSystemStatusStore } from '../store/systemStatusStore';
@@ -113,4 +114,4 @@ const TelemetryPanel = () => {
   );
 };
 
-export default TelemetryPanel;
+export default memo(TelemetryPanel);

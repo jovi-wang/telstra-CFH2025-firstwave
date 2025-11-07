@@ -1,16 +1,13 @@
 import { create } from 'zustand';
 import type { SystemEvent } from '../services/eventStreamService';
+import type { ToolCall } from '../types';
 
 // Message type for chat display
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: string;
-  toolCalls?: Array<{
-    tool: string;
-    arguments: Record<string, any>;
-    result?: any;
-  }>;
+  toolCalls?: ToolCall[];
   systemEvent?: SystemEvent; // For system event messages
 }
 

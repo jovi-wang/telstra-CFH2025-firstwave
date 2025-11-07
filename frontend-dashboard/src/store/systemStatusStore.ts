@@ -1,6 +1,16 @@
 import { create } from 'zustand';
 
 /**
+ * Edge Deployment interface
+ */
+export interface EdgeDeployment {
+  deploymentId: string;
+  imageId: string;
+  zoneName: string;
+  status: string;
+}
+
+/**
  * System Status Store
  * Tracks the operational status of key system components
  */
@@ -13,6 +23,7 @@ interface SystemStatusStore {
   sessionId: string | null;
   currentQoSProfile: string;
   qodSessionId: string | null;
+  edgeDeployment: EdgeDeployment | null;
 
   // Actions
   setEmergencyMode: (active: boolean) => void;
@@ -23,6 +34,13 @@ interface SystemStatusStore {
   setSessionId: (id: string | null) => void;
   setCurrentQoSProfile: (profile: string) => void;
   setQodSessionId: (id: string | null) => void;
+  updateEdgeDeployment: (
+    deploymentId: string,
+    imageId: string,
+    zoneName: string,
+    status: string
+  ) => void;
+  clearEdgeDeployment: () => void;
   resetAllStatuses: () => void;
 }
 
@@ -35,6 +53,7 @@ export const useSystemStatusStore = create<SystemStatusStore>((set, get) => ({
   sessionId: null,
   currentQoSProfile: 'QOS_L', // Default to low quality
   qodSessionId: null,
+  edgeDeployment: null,
 
   // Actions
   setEmergencyMode: (active) => set({ isEmergencyMode: active }),
@@ -45,6 +64,11 @@ export const useSystemStatusStore = create<SystemStatusStore>((set, get) => ({
   setSessionId: (id) => set({ sessionId: id }),
   setCurrentQoSProfile: (profile) => set({ currentQoSProfile: profile }),
   setQodSessionId: (id) => set({ qodSessionId: id }),
+  updateEdgeDeployment: (deploymentId, imageId, zoneName, status) =>
+    set({
+      edgeDeployment: { deploymentId, imageId, zoneName, status },
+    }),
+  clearEdgeDeployment: () => set({ edgeDeployment: null }),
   resetAllStatuses: () =>
     set({
       isEmergencyMode: false,
@@ -54,5 +78,6 @@ export const useSystemStatusStore = create<SystemStatusStore>((set, get) => ({
       sessionId: null,
       currentQoSProfile: 'QOS_L',
       qodSessionId: null,
+      edgeDeployment: null,
     }),
 }));

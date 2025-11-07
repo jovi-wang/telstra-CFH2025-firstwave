@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import Header from './components/Header';
 import MapView from './components/MapView';
 import VideoStreamViewer from './components/VideoStreamViewer';
@@ -9,83 +9,67 @@ import AIAssistantChatbot from './components/AIAssistantChatbot';
 import StatusPanel from './components/StatusPanel';
 import NotificationContainer from './components/NotificationContainer';
 import ActiveSubscriptionsPanel from './components/ActiveSubscriptionsPanel';
-import type { Subscription } from './components/ActiveSubscriptionsPanel';
 import { useRegionDeviceStore } from './store/regionDeviceStore';
 import { useSystemStatusStore } from './store/systemStatusStore';
+import { useMapStore } from './store/mapStore';
+import { useSubscriptionsStore } from './store/subscriptionsStore';
 import eventStreamService from './services/eventStreamService';
 
-// Melbourne CBD base location (Fire Station HQ)
-const MELBOURNE_CBD_BASE = {
-  lat: -37.8136,
-  lon: 144.9631,
-  name: 'Fire Station HQ',
-};
+// Event types
+interface RegionDeviceCountEvent {
+  event_type: string;
+  radius: number;
+  device_count: number;
+  timestamp: string;
+  [key: string]: unknown; // Allow additional properties
+}
 
 function App() {
   // System status store
   const isEmergencyMode = useSystemStatusStore(
     (state) => state.isEmergencyMode
   );
-  const setEmergencyMode = useSystemStatusStore(
-    (state) => state.setEmergencyMode
-  );
+  const edgeDeployment = useSystemStatusStore((state) => state.edgeDeployment);
 
   // Region device count store
   const { deviceCountPoints, addDeviceCountPoint } = useRegionDeviceStore();
 
-  // Map control state
-  const [mapCenter, setMapCenter] = useState<{ lat: number; lon: number }>({
-    lat: MELBOURNE_CBD_BASE.lat,
-    lon: MELBOURNE_CBD_BASE.lon,
-  });
-  const [incidentLocation, setIncidentLocation] = useState<{
-    lat: number;
-    lon: number;
-    address: string;
-  } | null>(null);
-  const [droneKitLocation, setDroneKitLocation] = useState<{
-    lat: number;
-    lon: number;
-  } | null>(null);
-  const [edgeNodeLocation, setEdgeNodeLocation] = useState<{
-    lat: number;
-    lon: number;
-    name: string;
-  } | null>(null);
-  const [baseLocation, setBaseLocation] = useState<
-    typeof MELBOURNE_CBD_BASE | null
-  >(MELBOURNE_CBD_BASE);
-  const [geofencingCircle, setGeofencingCircle] = useState<{
-    lat: number;
-    lon: number;
-    radius: number;
-  } | null>(null);
+  // Map store
+  const {
+    mapCenter,
+    baseLocation,
+    incidentLocation,
+    droneKitLocation,
+    edgeNodeLocation,
+    geofencingCircle,
+    moveMapToAddress: moveMapToAddressStore,
+    addDroneKitMarker: addDroneKitMarkerStore,
+    addEdgeNodeMarker: addEdgeNodeMarkerStore,
+    addGeofencingCircle: addGeofencingCircleStore,
+    resetMapState,
+  } = useMapStore();
 
-  // Edge deployment state
-  const [edgeDeployment, setEdgeDeployment] = useState<{
-    deploymentId: string;
-    imageId: string;
-    zoneName: string;
-    status: string;
-  } | null>(null);
-
-  // Active subscriptions state
-  const [activeSubscriptions, setActiveSubscriptions] = useState<
-    Subscription[]
-  >([]);
+  // Subscriptions store
+  const {
+    activeSubscriptions,
+    addSubscription: addSubscriptionStore,
+    removeSubscription: removeSubscriptionStore,
+    clearAllSubscriptions,
+  } = useSubscriptionsStore();
 
   // Subscribe to region device count events
   useEffect(() => {
-    const handleRegionDeviceCount = (event: any) => {
+    const handleRegionDeviceCount = (event: unknown) => {
+      const regionEvent = event as RegionDeviceCountEvent;
       // Event structure: { event_type, radius, device_count, timestamp }
       // Use drone kit location for heatmap (only if drone is verified and marker exists)
       if (droneKitLocation) {
         addDeviceCountPoint({
           lat: droneKitLocation.lat,
           lon: droneKitLocation.lon,
-          device_count: event.device_count,
-          radius: event.radius,
-          timestamp: event.timestamp,
+          device_count: regionEvent.device_count,
+          radius: regionEvent.radius,
+          timestamp: regionEvent.timestamp,
         });
       }
     };
@@ -99,91 +83,95 @@ function App() {
     };
   }, [addDeviceCountPoint, droneKitLocation]);
 
-  // Move map to address and set incident marker
-  const moveMapToAddress = (address: string, lat: number, lon: number) => {
-    setMapCenter({ lat, lon });
-    setIncidentLocation({ lat, lon, address });
-  };
+  // Wrap store actions with useCallback for stable references
+  const moveMapToAddress = useCallback(moveMapToAddressStore, [
+    moveMapToAddressStore,
+  ]);
 
-  // Add drone kit marker and clear base location
-  const addDroneKitMarker = (lat: number, lon: number) => {
-    // Add small offset to avoid overlapping with incident marker
-    // Offset by ~100m (0.001 degrees) to the east and slightly north
-    const offsetLat = lat + 0.001;
-    const offsetLon = lon + 0.001;
+  const addDroneKitMarker = useCallback(addDroneKitMarkerStore, [
+    addDroneKitMarkerStore,
+  ]);
 
-    setDroneKitLocation({ lat: offsetLat, lon: offsetLon });
-    setBaseLocation(null); // Clear CBD base marker
-  };
+  const addEdgeNodeMarker = useCallback(addEdgeNodeMarkerStore, [
+    addEdgeNodeMarkerStore,
+  ]);
 
-  // Add edge node marker
-  const addEdgeNodeMarker = (lat: number, lon: number, zoneName: string) => {
-    setEdgeNodeLocation({ lat, lon, name: zoneName });
-  };
+  const addGeofencingCircle = useCallback(addGeofencingCircleStore, [
+    addGeofencingCircleStore,
+  ]);
 
-  // Update edge deployment info
-  const updateEdgeDeployment = (
-    deploymentId: string,
-    imageId: string,
-    zoneName: string,
-    status: string
-  ) => {
-    setEdgeDeployment({ deploymentId, imageId, zoneName, status });
-  };
+  const addSubscription = useCallback(addSubscriptionStore, [
+    addSubscriptionStore,
+  ]);
 
-  // Clear edge deployment
-  const clearEdgeDeployment = () => {
-    setEdgeDeployment(null);
-  };
+  // Get store actions from systemStatusStore
+  const updateEdgeDeployment = useSystemStatusStore(
+    (state) => state.updateEdgeDeployment
+  );
+  const clearEdgeDeployment = useSystemStatusStore(
+    (state) => state.clearEdgeDeployment
+  );
 
-  // Add geofencing circle
-  const addGeofencingCircle = (lat: number, lon: number, radius: number) => {
-    setGeofencingCircle({ lat, lon, radius });
-  };
+  // Handle subscription removal with geofencing cleanup
+  const removeSubscription = useCallback(
+    (subscriptionId: string) => {
+      // Check if it's a geofencing subscription before removing
+      const subscription = activeSubscriptions.find(
+        (sub) => sub.id === subscriptionId
+      );
 
-  // Add subscription to active subscriptions list
-  const addSubscription = (subscription: Subscription) => {
-    setActiveSubscriptions((prev) => [...prev, subscription]);
-  };
+      if (subscription && subscription.type === 'Geofencing') {
+        useMapStore.getState().clearGeofencingCircle();
+      }
 
-  // Remove subscription from active subscriptions list
-  const removeSubscription = (subscriptionId: string) => {
-    setActiveSubscriptions((prev) =>
-      prev.filter((sub) => sub.id !== subscriptionId)
-    );
-
-    // If removing a geofencing subscription, also clear the geofencing circle
-    const subscription = activeSubscriptions.find(
-      (sub) => sub.id === subscriptionId
-    );
-    if (subscription && subscription.type === 'Geofencing') {
-      setGeofencingCircle(null);
-    }
-  };
+      removeSubscriptionStore(subscriptionId);
+    },
+    [activeSubscriptions, removeSubscriptionStore]
+  );
 
   // Reset dashboard to initial state
-  const resetDashboard = () => {
+  const resetDashboard = useCallback(() => {
     console.log('🔄 Resetting dashboard to initial state');
 
-    // Reset emergency mode to normal
-    setEmergencyMode(false);
+    // Reset all stores
+    useSystemStatusStore.getState().resetAllStatuses();
+    resetMapState();
+    clearAllSubscriptions();
+  }, [resetMapState, clearAllSubscriptions]);
 
-    // Reset map to base location
-    setMapCenter({ lat: MELBOURNE_CBD_BASE.lat, lon: MELBOURNE_CBD_BASE.lon });
-
-    // Clear all markers
-    setIncidentLocation(null);
-    setDroneKitLocation(null);
-    setEdgeNodeLocation(null);
-    setBaseLocation(MELBOURNE_CBD_BASE);
-    setGeofencingCircle(null);
-
-    // Clear edge deployment
-    setEdgeDeployment(null);
-
-    // Clear all subscriptions
-    setActiveSubscriptions([]);
-  };
+  // Memoize AI Assistant Chatbot to avoid duplication in both modes
+  const aiAssistantChatbot = useMemo(
+    () => (
+      <AIAssistantChatbot
+        onMoveMap={moveMapToAddress}
+        onAddDroneKitMarker={addDroneKitMarker}
+        onAddEdgeNodeMarker={addEdgeNodeMarker}
+        onUpdateEdgeDeployment={updateEdgeDeployment}
+        onClearEdgeDeployment={clearEdgeDeployment}
+        onAddGeofencingCircle={addGeofencingCircle}
+        onAddSubscription={addSubscription}
+        onRemoveSubscription={removeSubscription}
+        onResetDashboard={resetDashboard}
+        droneKitLocation={droneKitLocation}
+        incidentLocation={incidentLocation}
+        baseLocation={baseLocation}
+      />
+    ),
+    [
+      moveMapToAddress,
+      addDroneKitMarker,
+      addEdgeNodeMarker,
+      updateEdgeDeployment,
+      clearEdgeDeployment,
+      addGeofencingCircle,
+      addSubscription,
+      removeSubscription,
+      resetDashboard,
+      droneKitLocation,
+      incidentLocation,
+      baseLocation,
+    ]
+  );
 
   return (
     <div className='h-screen bg-background text-white flex flex-col overflow-hidden'>
@@ -205,7 +193,7 @@ function App() {
             >
               {/* Left Column - Map, Active Subscriptions, and Telemetry */}
               <div className='col-span-1 flex flex-col gap-2'>
-                {/* Map View */}
+                {/* Map View - 8:9 aspect ratio matches VideoStreamViewer height (16:9 at 2x width) */}
                 <div
                   className='bg-surface rounded-lg overflow-hidden border border-gray-700'
                   style={{ aspectRatio: '8/9', width: '100%' }}
@@ -228,7 +216,7 @@ function App() {
                     minHeight:
                       activeSubscriptions.length === 0 ? '140px' : '180px',
                     maxHeight:
-                      activeSubscriptions.length === 0 ? '180px' : '280px',
+                      activeSubscriptions.length === 0 ? '180px' : '380px',
                   }}
                 >
                   <ActiveSubscriptionsPanel
@@ -249,7 +237,7 @@ function App() {
 
               {/* Right 2 Columns - Video, Network Metrics, Edge Analysis */}
               <div className='col-span-2 flex flex-col gap-2'>
-                {/* Video Stream - Top */}
+                {/* Video Stream - Top - 16:9 aspect ratio */}
                 <div
                   className='bg-surface rounded-lg overflow-hidden border border-gray-700'
                   style={{ aspectRatio: '16/9', width: '100%' }}
@@ -288,20 +276,7 @@ function App() {
 
           {/* AI Assistant - Right Side (1 column, same as normal mode) */}
           <div className='col-span-1 bg-surface rounded-lg overflow-hidden border border-gray-700 min-h-0'>
-            <AIAssistantChatbot
-              onMoveMap={moveMapToAddress}
-              onAddDroneKitMarker={addDroneKitMarker}
-              onAddEdgeNodeMarker={addEdgeNodeMarker}
-              onUpdateEdgeDeployment={updateEdgeDeployment}
-              onClearEdgeDeployment={clearEdgeDeployment}
-              onAddGeofencingCircle={addGeofencingCircle}
-              onAddSubscription={addSubscription}
-              onRemoveSubscription={removeSubscription}
-              onResetDashboard={resetDashboard}
-              droneKitLocation={droneKitLocation}
-              incidentLocation={incidentLocation}
-              baseLocation={baseLocation}
-            />
+            {aiAssistantChatbot}
           </div>
         </div>
       ) : (
@@ -327,20 +302,7 @@ function App() {
 
           {/* AI Assistant - Right Side (1 column, 25% width) */}
           <div className='col-span-1 bg-surface rounded-lg overflow-hidden border border-gray-700 min-h-0'>
-            <AIAssistantChatbot
-              onMoveMap={moveMapToAddress}
-              onAddDroneKitMarker={addDroneKitMarker}
-              onAddEdgeNodeMarker={addEdgeNodeMarker}
-              onUpdateEdgeDeployment={updateEdgeDeployment}
-              onClearEdgeDeployment={clearEdgeDeployment}
-              onAddGeofencingCircle={addGeofencingCircle}
-              onAddSubscription={addSubscription}
-              onRemoveSubscription={removeSubscription}
-              onResetDashboard={resetDashboard}
-              droneKitLocation={droneKitLocation}
-              incidentLocation={incidentLocation}
-              baseLocation={baseLocation}
-            />
+            {aiAssistantChatbot}
           </div>
         </div>
       )}
