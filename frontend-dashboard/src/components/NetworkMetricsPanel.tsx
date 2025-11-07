@@ -17,7 +17,7 @@ import {
 import { useSystemStatusStore } from '../store/systemStatusStore';
 
 const NetworkMetricsPanel = () => {
-  const { connectivity, performance } = staticNetworkMetrics;
+  const { performance } = staticNetworkMetrics;
 
   // Get QoS profile, QoD session ID, and stream status from store
   const currentQoSProfile = useSystemStatusStore(

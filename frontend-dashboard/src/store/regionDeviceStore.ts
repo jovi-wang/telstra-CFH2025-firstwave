@@ -13,30 +13,29 @@ export interface DeviceCountPoint {
 
 /**
  * Region Device Count Store
- * Stores device count readings from different locations for heatmap visualization
+ * Stores the latest device count reading for heatmap visualization
  */
 interface RegionDeviceStore {
-  // Device count data points
-  deviceCountPoints: DeviceCountPoint[];
+  // Latest device count data point
+  deviceCountPoint: DeviceCountPoint | null;
 
   // Actions
-  addDeviceCountPoint: (point: DeviceCountPoint) => void;
-  clearDeviceCountPoints: () => void;
+  setDeviceCountPoint: (point: DeviceCountPoint) => void;
+  clearDeviceCountPoint: () => void;
 }
 
 export const useRegionDeviceStore = create<RegionDeviceStore>((set) => ({
-  // Initial state - empty array
-  deviceCountPoints: [],
+  // Initial state - no point
+  deviceCountPoint: null,
 
   // Actions
-  addDeviceCountPoint: (point) =>
+  setDeviceCountPoint: (point) =>
     set({
-      // Replace with only the latest point (no historical data)
-      deviceCountPoints: [point],
+      deviceCountPoint: point,
     }),
 
-  clearDeviceCountPoints: () =>
+  clearDeviceCountPoint: () =>
     set({
-      deviceCountPoints: [],
+      deviceCountPoint: null,
     }),
 }));

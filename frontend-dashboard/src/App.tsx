@@ -32,7 +32,7 @@ function App() {
   const edgeDeployment = useSystemStatusStore((state) => state.edgeDeployment);
 
   // Region device count store
-  const { deviceCountPoints, addDeviceCountPoint } = useRegionDeviceStore();
+  const { deviceCountPoint, setDeviceCountPoint } = useRegionDeviceStore();
 
   // Map store
   const {
@@ -64,7 +64,7 @@ function App() {
       // Event structure: { event_type, radius, device_count, timestamp }
       // Use drone kit location for heatmap (only if drone is verified and marker exists)
       if (droneKitLocation) {
-        addDeviceCountPoint({
+        setDeviceCountPoint({
           lat: droneKitLocation.lat,
           lon: droneKitLocation.lon,
           device_count: regionEvent.device_count,
@@ -81,7 +81,7 @@ function App() {
     return () => {
       eventStreamService.off('region_device_count', handleRegionDeviceCount);
     };
-  }, [addDeviceCountPoint, droneKitLocation]);
+  }, [setDeviceCountPoint, droneKitLocation]);
 
   // Get store actions from systemStatusStore
   const updateEdgeDeployment = useSystemStatusStore(
@@ -114,6 +114,7 @@ function App() {
 
     // Reset all stores
     useSystemStatusStore.getState().resetAllStatuses();
+    useRegionDeviceStore.getState().clearDeviceCountPoint();
     resetMapState();
     clearAllSubscriptions();
   }, [resetMapState, clearAllSubscriptions]);
@@ -184,7 +185,7 @@ function App() {
                     droneKitLocation={droneKitLocation}
                     edgeNodeLocation={edgeNodeLocation}
                     geofencingCircle={geofencingCircle}
-                    deviceCountPoints={deviceCountPoints}
+                    deviceCountPoint={deviceCountPoint}
                   />
                 </div>
 
@@ -270,7 +271,7 @@ function App() {
               droneKitLocation={droneKitLocation}
               edgeNodeLocation={edgeNodeLocation}
               geofencingCircle={geofencingCircle}
-              deviceCountPoints={deviceCountPoints}
+              deviceCountPoint={deviceCountPoint}
             />
           </div>
 

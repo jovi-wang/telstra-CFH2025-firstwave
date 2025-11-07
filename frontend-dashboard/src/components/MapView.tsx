@@ -7,11 +7,12 @@ import {
   useMap,
 } from 'react-leaflet';
 import { Icon } from 'leaflet';
-import { useEffect, memo } from 'react';
+import { useEffect, memo, useMemo } from 'react';
 import { Layers } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet.heat';
 import { useSystemStatusStore } from '../store/systemStatusStore';
+import type { DeviceCountPoint } from '../store/regionDeviceStore';
 
 // Fix Leaflet default icon issue
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -99,13 +100,6 @@ const GreenIcon = divIcon({
   popupAnchor: [0, -41],
 });
 
-// Device count data point interface
-interface DeviceCountPoint {
-  lat: number;
-  lon: number;
-  device_count: number;
-}
-
 // Map Legend Component - Memoized for performance
 const MapLegend = memo(() => (
   <div className='absolute bottom-4 left-4 z-[1000] bg-surface bg-opacity-95 p-3 rounded-lg shadow-lg text-xs'>
@@ -178,12 +172,12 @@ const MapLegend = memo(() => (
 
 MapLegend.displayName = 'MapLegend';
 
-// Custom HeatmapLayer component with tooltip
-const HeatmapLayer = ({ points }: { points: DeviceCountPoint[] }) => {
+// Custom HeatmapLayer component with tooltip - Optimized for single point
+const HeatmapLayer = ({ point }: { point: DeviceCountPoint | null }) => {
   const map = useMap();
 
   useEffect(() => {
-    if (!points || points.length === 0) {
+    if (!point) {
       return;
     }
 
@@ -193,35 +187,34 @@ const HeatmapLayer = ({ points }: { points: DeviceCountPoint[] }) => {
       return;
     }
 
-    // Convert device count points to heatmap format: [lat, lon, intensity]
-    // Normalize device_count (50-100) to intensity (0-1)
-    const heatmapData: Array<[number, number, number]> = points.map((point) => {
-      // Map 50-100 to 0-1 intensity
+    // Debounce rapid updates
+    const timer = setTimeout(() => {
+      // Normalize device_count (50-100) to intensity (0-1)
       const intensity = (point.device_count - 50) / 50;
-      return [point.lat, point.lon, intensity];
-    });
+      const heatmapData: Array<[number, number, number]> = [
+        [point.lat, point.lon, intensity],
+      ];
 
-    // Create heatmap layer with Leaflet.heat
-    const heat = (L as any).heatLayer(heatmapData, {
-      radius: 50,
-      blur: 50,
-      maxZoom: 18,
-      max: 1.0,
-      minOpacity: 0.5,
-      gradient: {
-        0.0: '#81c951ff', // blue (50 devices)
-        0.33: '#8bfd00ff', // lighter blue
-        0.5: '#fdbc17ff', // yellow (67 devices)
-        0.75: '#f8811fff', // orange (84 devices)
-        1.0: '#f00b0bff', // red (100 devices)
-      },
-    });
+      // Create heatmap layer with Leaflet.heat
+      const heat = (L as any).heatLayer(heatmapData, {
+        radius: 50,
+        blur: 50,
+        maxZoom: 18,
+        max: 1.0,
+        minOpacity: 0.5,
+        gradient: {
+          0.0: '#81c951ff', // blue (50 devices)
+          0.33: '#8bfd00ff', // lighter blue
+          0.5: '#fdbc17ff', // yellow (67 devices)
+          0.75: '#f8811fff', // orange (84 devices)
+          1.0: '#f00b0bff', // red (100 devices)
+        },
+      });
 
-    // Add to map
-    heat.addTo(map);
+      // Add to map
+      heat.addTo(map);
 
-    // Add invisible circle markers with tooltips for each point
-    const tooltipMarkers = points.map((point) => {
+      // Add invisible circle marker with tooltip
       const circle = L.circle([point.lat, point.lon], {
         radius: 50, // Match heatmap radius
         fillColor: 'transparent',
@@ -244,18 +237,24 @@ const HeatmapLayer = ({ points }: { points: DeviceCountPoint[] }) => {
       );
 
       circle.addTo(map);
-      return circle;
-    });
 
-    // Cleanup on unmount or when points change
+      // Cleanup function
+      return () => {
+        map.removeLayer(heat);
+        map.removeLayer(circle);
+      };
+    }, 300); // Debounce by 300ms
+
+    // Cleanup on unmount or when point changes
     return () => {
-      map.removeLayer(heat);
-      tooltipMarkers.forEach((marker) => map.removeLayer(marker));
+      clearTimeout(timer);
     };
-  }, [map, points]);
+  }, [map, point]);
 
   return null;
 };
+
+HeatmapLayer.displayName = 'HeatmapLayer';
 
 interface MapViewProps {
   center?: { lat: number; lon: number };
@@ -264,7 +263,7 @@ interface MapViewProps {
   droneKitLocation?: { lat: number; lon: number } | null;
   edgeNodeLocation?: { lat: number; lon: number; name: string } | null;
   geofencingCircle?: { lat: number; lon: number; radius: number } | null;
-  deviceCountPoints?: DeviceCountPoint[];
+  deviceCountPoint?: DeviceCountPoint | null;
 }
 
 // Component to update map center dynamically
@@ -276,6 +275,9 @@ const MapCenterUpdater = ({ center }: { center: [number, number] }) => {
   return null;
 };
 
+// Default center to Melbourne CBD
+const DEFAULT_CENTER: [number, number] = [-37.8136, 144.9631];
+
 const MapView = ({
   center,
   baseLocation,
@@ -283,18 +285,19 @@ const MapView = ({
   droneKitLocation,
   edgeNodeLocation,
   geofencingCircle,
-  deviceCountPoints = [],
+  deviceCountPoint = null,
 }: MapViewProps) => {
   // Get emergency mode from store
   const isEmergencyMode = useSystemStatusStore(
     (state) => state.isEmergencyMode
   );
 
-  // Default center to Melbourne CBD if no center provided
-  const defaultCenter: [number, number] = [-37.8136, 144.9631];
-  const mapCenter: [number, number] = center
-    ? [center.lat, center.lon]
-    : defaultCenter;
+  // Memoize mapCenter array to prevent unnecessary MapCenterUpdater triggers
+  const mapCenter: [number, number] = useMemo(
+    () => (center ? [center.lat, center.lon] : DEFAULT_CENTER),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [center?.lat, center?.lon]
+  );
 
   return (
     <div className='relative w-full h-full'>
@@ -317,9 +320,7 @@ const MapView = ({
         <MapCenterUpdater center={mapCenter} />
 
         {/* Heatmap Layer for Device Count */}
-        {deviceCountPoints.length > 0 && (
-          <HeatmapLayer points={deviceCountPoints} />
-        )}
+        {deviceCountPoint && <HeatmapLayer point={deviceCountPoint} />}
 
         {/* Map markers - Always visible */}
         <>
