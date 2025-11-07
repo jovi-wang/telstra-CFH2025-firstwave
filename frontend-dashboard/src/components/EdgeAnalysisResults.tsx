@@ -169,8 +169,8 @@ const EdgeAnalysisResults = ({
         </div>
       )}
 
-      {/* Heat Signatures - Only show when edge processing is active */}
-      {edgeDeployment && edgeProcessing && (
+      {/* Heat Signatures */}
+      {edgeDeployment && (
         <div className='mb-6'>
           <h3 className='text-sm font-semibold mb-3 flex items-center justify-between'>
             <span>Heat Signatures Detected ({heatSignatures.length})</span>
@@ -206,8 +206,8 @@ const EdgeAnalysisResults = ({
         </div>
       )}
 
-      {/* Statistics - Only show when edge processing is active */}
-      {edgeDeployment && edgeProcessing && (
+      {/* Statistics */}
+      {edgeDeployment && (
         <div className='bg-background p-4 rounded-lg'>
           <h3 className='text-sm font-semibold mb-3'>Analysis Statistics</h3>
 

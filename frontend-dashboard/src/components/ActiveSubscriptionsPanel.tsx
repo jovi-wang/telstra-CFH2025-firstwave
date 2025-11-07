@@ -11,10 +11,12 @@ export interface Subscription {
 
 interface ActiveSubscriptionsPanelProps {
   subscriptions: Subscription[];
+  isEmergencyMode: boolean;
 }
 
 const ActiveSubscriptionsPanel = ({
   subscriptions,
+  isEmergencyMode,
 }: ActiveSubscriptionsPanelProps) => {
   const streamActive = useSystemStatusStore((state) => state.streamActive);
   const formatParameters = (params?: Record<string, any>) => {
@@ -54,10 +56,15 @@ const ActiveSubscriptionsPanel = ({
     createdAt: new Date().toISOString(),
   };
 
-  // Combine static subscription with existing subscriptions
-  const allSubscriptions = connectivityInsightsSubscription
-    ? [connectivityInsightsSubscription, webrtcSubscription, ...subscriptions]
-    : subscriptions;
+  // Combine static subscriptions with existing subscriptions
+  // Always show webrtcSubscription in emergency mode
+  let allSubscriptions = [...subscriptions];
+  if (isEmergencyMode) {
+    allSubscriptions = [webrtcSubscription, ...allSubscriptions];
+  }
+  if (connectivityInsightsSubscription) {
+    allSubscriptions = [connectivityInsightsSubscription, ...allSubscriptions];
+  }
 
   return (
     <div className='h-full flex flex-col p-3 space-y-3 overflow-y-auto'>

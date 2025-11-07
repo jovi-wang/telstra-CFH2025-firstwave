@@ -20,7 +20,7 @@ const Header = ({ isEmergencyMode, onToggleEmergency }: HeaderProps) => {
       <div className='flex items-center justify-between'>
         {/* Left: Incident Info or Temperature */}
         <div className='flex items-center space-x-6'>
-          <h1 className='text-2xl font-bold'>First Wave</h1>
+          <h1 className='text-2xl font-bold'>Emergency Response Center</h1>
           {isEmergencyMode ? (
             // Emergency Mode: Show Incident Info
             <div className='flex items-center space-x-4 text-sm'>

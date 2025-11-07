@@ -234,6 +234,7 @@ function App() {
                 >
                   <ActiveSubscriptionsPanel
                     subscriptions={activeSubscriptions}
+                    isEmergencyMode={isEmergencyMode}
                   />
                 </div>
 
