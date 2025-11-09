@@ -96,11 +96,11 @@ This solution leverages 15 CAMARA network APIs across 6 categories to deliver a 
 
 ### 🔒 Authentication and Fraud Prevention (3 APIs)
 
-| API                       | Purpose                                                | Use Case                                                                    |
-| ------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------- |
-| **Number Verify**         | Verify phone number is active on device                | Pre-flight authentication to confirm drone device identity before takeoff   |
-| **SIM Swap Detection**    | Detect if SIM card has been swapped recently           | Security check to prevent drone hijacking via SIM swap fraud                |
-| **Device Swap Detection** | Detect if phone number has moved to a different device | Equipment integrity validation to ensure correct drone hardware is deployed |
+| API                     | Purpose                                                | Use Case                                                                    |
+| ----------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------- |
+| **Number Verification** | Verify phone number is active on device                | Pre-flight authentication to confirm drone device identity before takeoff   |
+| **SIM Swap**            | Detect if SIM card has been swapped recently           | Security check to prevent drone hijacking via SIM swap fraud                |
+| **Device Swap**         | Detect if phone number has moved to a different device | Equipment integrity validation to ensure correct drone hardware is deployed |
 
 ### 📍 Location Services (4 APIs)
 
