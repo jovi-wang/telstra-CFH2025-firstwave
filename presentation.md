@@ -39,12 +39,12 @@
 
 **_Thermal Image Overlay_**
 
-![thermal image overlay](./images/thermal-image.png)
+<img src="./images/thermal-image.png" alt="thermal image overlay" width="350" />
 
 **_Mixed reality integration_**
 
-![mixed reality experience](./images/mixed-reality-experience.png)
+<img src="./images/mixed-reality-experience.png" alt="mixed reality experience" width="350" />
 
 **_Multi Drone/Cam collaboration_**
 
-![multi drone collaboration](./images/multi-drone-cam.jpeg)
+<img src="./images/multi-drone-cam.jpeg" alt="multi drone collaboration" width="350" />
