@@ -39,7 +39,9 @@
 
 **_Thermal Image Overlay_**
 ![thermal image overlay](./images/thermal-image.png)
+
 **_Mixed reality integration_**
 ![mixed reality experience](./images/mixed-reality-experience.png)
+
 **_Multi Drone/Cam collaboration_**
 ![multi drone collaboration](./images/multi-drone-cam.jpeg)
