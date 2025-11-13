@@ -2,7 +2,7 @@
 
 A comprehensive bushfire response system using drones and CAMARA network APIs for real-time disaster monitoring and response coordination.
 
-Developed for [Telstra's Connected Future Hackathon 2025](https://telstra.brightidea.com/CFH2025). See [Rubrics](./Rubrics.md) for elevator pitch and details about how this project addresses the hackathon criteria.
+Developed for [Telstra's Connected Future Hackathon 2025](https://telstra.brightidea.com/CFH2025). See [Rubrics](./Rubrics.md) for elevator pitch and details about how this project addresses the hackathon criteria (including CAMARA's API usage)
 
 ## 🌟 Executive Summary
 
