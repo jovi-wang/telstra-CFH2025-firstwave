@@ -8,6 +8,7 @@ Developed for [Telstra's Connected Future Hackathon 2025](https://telstra.bright
 
 This system demonstrates an innovative disaster response solution combining drone operations with 15 CAMARA network APIs. The typical workflow involves:
 
+0. **Preflight Check**: Conduct device integrity check (Number Verify, SIM Swap Detection, Device Swap Detection) before mission
 1. **Incident Reporting**: Operator reports bushfire location (street address) in chatbot interface
 2. **Geofencing Setup**: Creates geofencing subscription around disaster area with visual map marker
 3. **Location Verification**: Confirms drone arrival at scene via location verification API
@@ -316,6 +317,15 @@ sequenceDiagram
     participant MCP as MCP Server
     participant Edge as Edge Node
     participant Drone as Drone Kit
+
+    Note over User,Drone: Phase 0: Preflight Integrity Check
+    User->>FE: "Conduct preflight integrity check"
+    FE->>BE: POST /api/chat/message
+    BE->>BE: AI Agent processes request
+    BE->>MCP: integrity_check(phone_number, device_id)
+    MCP-->>BE: {numberVerified, simSwapStatus, deviceSwapStatus}
+    BE-->>FE: SSE stream (integrity results)
+    FE->>FE: Display integrity status in StatusPanel<br/>(Number Verified, No SIM Swap, No Device Swap)
 
     Note over User,Drone: Phase 0: Incident Initiation
     User->>FE: Report incident via chatbot<br/>"Bushfire at [address]"
