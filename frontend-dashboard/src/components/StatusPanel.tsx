@@ -31,7 +31,7 @@ const StatusPanel = () => {
               <div className='flex items-center space-x-2'>
                 <Signal className='w-4 h-4 text-primary' />
                 <span className='text-sm font-medium'>
-                  Drone Device Connectivity
+                  Device Connected Network Type
                 </span>
               </div>
               <span className='text-primary text-xs font-semibold'>5G</span>
@@ -43,7 +43,7 @@ const StatusPanel = () => {
               <div className='flex items-center space-x-2'>
                 <Radio className='w-4 h-4 text-success' />
                 <span className='text-sm font-medium'>
-                  Drone Device Reachability
+                  Device Reachability Status
                 </span>
               </div>
               <span className='text-success text-xs font-semibold'>DATA</span>
