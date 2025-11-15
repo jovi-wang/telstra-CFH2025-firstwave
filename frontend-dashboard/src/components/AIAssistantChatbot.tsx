@@ -88,7 +88,16 @@ const AIAssistantChatbot = ({
   );
 
   const [inputValue, setInputValue] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-resize textarea based on content
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 150)}px`;
+    }
+  }, [inputValue]);
 
   // Helper to generate unique key for tool call
   const getToolKey = (messageIndex: number, toolIndex: number) =>
@@ -547,7 +556,7 @@ const AIAssistantChatbot = ({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -886,15 +895,19 @@ const AIAssistantChatbot = ({
 
       {/* Bottom Section - Fixed at bottom */}
       <div className='flex-shrink-0 px-4 pb-4'>
-        {/* Input Field */}
+        {/* Input Field - Changed to textarea to support scrolling for long placeholder text */}
         <div className='flex items-center space-x-2'>
-          <input
-            type='text'
+          <textarea
+            ref={textareaRef}
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={(e) => {
+              setInputValue(e.target.value);
+            }}
             onKeyDown={handleKeyDown}
             placeholder='Ask about network status, drone location, devices count...'
-            className='flex-1 bg-background border border-gray-700 rounded-lg px-4 py-2 text-base focus:outline-none focus:border-primary transition-colors'
+            className='flex-1 bg-background border border-gray-700 rounded-lg px-4 py-2 text-base focus:outline-none focus:border-primary transition-colors resize-none'
+            rows={1}
+            style={{ minHeight: '44px', maxHeight: '150px' }}
           />
           <button
             onClick={handleSend}
