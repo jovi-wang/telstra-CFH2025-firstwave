@@ -637,7 +637,7 @@ const AIAssistantChatbot = ({
       <div className='p-4 pb-2 flex-shrink-0'>
         <h2 className='text-xl font-semibold flex items-center space-x-2'>
           <Bot className='w-5 h-5 text-primary' />
-          <span>AI Assistant</span>
+          <span>AI Agent Assistant</span>
         </h2>
       </div>
 
