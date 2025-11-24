@@ -114,13 +114,18 @@ const AIAssistantChatbot = ({
     const value = e.target.value;
     setInputValue(value);
 
-    // Show suggestions if the input starts with '/' and is not followed by a space
-    // or if we're continuing to type after '/'
-    if (value.startsWith('/') && !value.includes(' ')) {
-      setShowSuggestions(true);
-    } else {
-      setShowSuggestions(false);
+    // Show suggestions only if the input starts with '/' and we haven't finished typing the command
+    // Don't show suggestions if there are parameters after the command (indicated by a space)
+    let showSuggestions = false;
+    if (value.startsWith('/')) {
+      // Check if the value contains a space after the command part
+      // If there's no space after the '/', show suggestions (still typing command)
+      // If there's a space after the '/', don't show suggestions (parameters entered)
+      const firstSpaceIndex = value.indexOf(' ');
+      showSuggestions = firstSpaceIndex === -1; // No space found, still typing command
     }
+
+    setShowSuggestions(showSuggestions);
   };
 
   // Helper to generate unique key for tool call
@@ -263,9 +268,12 @@ const AIAssistantChatbot = ({
           event.data.tool === 'undeploy_edge_application' &&
           event.data.result !== undefined
         ) {
-          // Get deployment_id from tool arguments
-          if (currentToolCall && currentToolCall.arguments) {
-            const deploymentId = currentToolCall.arguments.deployment_id;
+          // Get deployment_id from the matching tool call in assistantMessage
+          const toolCall = assistantMessage.toolCalls?.find(
+            (tc) => tc.tool === 'undeploy_edge_application'
+          );
+          if (toolCall && toolCall.arguments) {
+            const deploymentId = (toolCall.arguments as any).deployment_id;
             if (deploymentId && onClearEdgeDeployment) {
               onClearEdgeDeployment();
             }
@@ -314,10 +322,12 @@ const AIAssistantChatbot = ({
           event.data.tool === 'unsubscribe_geofencing' &&
           event.data.result !== undefined
         ) {
-          // Get subscription_id from tool arguments
-          if (currentToolCall && currentToolCall.arguments) {
-            const subscriptionId = (currentToolCall.arguments as any)
-              .subscription_id;
+          // Get subscription_id from the matching tool call in assistantMessage
+          const toolCall = assistantMessage.toolCalls?.find(
+            (tc) => tc.tool === 'unsubscribe_geofencing'
+          );
+          if (toolCall && toolCall.arguments) {
+            const subscriptionId = (toolCall.arguments as any).subscription_id;
             if (subscriptionId && onRemoveSubscription) {
               onRemoveSubscription(subscriptionId as string);
             }
@@ -349,10 +359,12 @@ const AIAssistantChatbot = ({
           event.data.tool === 'unsubscribe_connected_network' &&
           event.data.result !== undefined
         ) {
-          // Get subscription_id from tool arguments
-          if (currentToolCall && currentToolCall.arguments) {
-            const subscriptionId = (currentToolCall.arguments as any)
-              .subscription_id;
+          // Get subscription_id from the matching tool call in assistantMessage
+          const toolCall = assistantMessage.toolCalls?.find(
+            (tc) => tc.tool === 'unsubscribe_connected_network'
+          );
+          if (toolCall && toolCall.arguments) {
+            const subscriptionId = (toolCall.arguments as any).subscription_id;
             if (subscriptionId && onRemoveSubscription) {
               onRemoveSubscription(subscriptionId as string);
             }
@@ -576,7 +588,7 @@ const AIAssistantChatbot = ({
   }, [messages]);
 
   const handleSend = async () => {
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() || isTyping) return;
 
     // Check if this is a slash command
     if (isSlashCommand(inputValue)) {
@@ -600,13 +612,16 @@ const AIAssistantChatbot = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Decide once per key event whether we need the commands list
-    const needsCommands =
-      showSuggestions && ['Enter', 'ArrowDown', 'ArrowUp'].includes(e.key);
-    const commands = needsCommands ? getAvailableSlashCommands() : null;
+    // Extract the filter text from the input (text after the '/')
+    const filterText = inputValue.startsWith('/')
+      ? inputValue.substring(1)
+      : '';
+    const commands = showSuggestions
+      ? getAvailableSlashCommands(filterText)
+      : [];
 
     if (e.key === 'Enter' && !e.shiftKey) {
-      if (showSuggestions && suggestionIndex >= 0 && commands) {
+      if (showSuggestions && suggestionIndex >= 0 && commands.length > 0) {
         // Use the currently highlighted suggestion instead of sending
         e.preventDefault();
         const selected = commands[suggestionIndex];
@@ -619,10 +634,10 @@ const AIAssistantChatbot = ({
         e.preventDefault();
         handleSend();
       }
-    } else if (e.key === 'ArrowDown' && showSuggestions && commands) {
+    } else if (e.key === 'ArrowDown' && showSuggestions) {
       e.preventDefault();
       setSuggestionIndex((prev) => (prev < commands.length - 1 ? prev + 1 : 0));
-    } else if (e.key === 'ArrowUp' && showSuggestions && commands) {
+    } else if (e.key === 'ArrowUp' && showSuggestions) {
       e.preventDefault();
       setSuggestionIndex((prev) => (prev > 0 ? prev - 1 : commands.length - 1));
     } else if (e.key === 'Escape' && showSuggestions) {
@@ -972,42 +987,55 @@ const AIAssistantChatbot = ({
               value={inputValue}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              placeholder='Ask about network status, drone location, devices count...'
+              placeholder={
+                isTyping
+                  ? 'AI assistant is responding...'
+                  : 'Ask about network status, drone location, devices count...'
+              }
               className='w-full bg-background border border-gray-700 rounded-lg px-4 py-2 text-base focus:outline-none focus:border-primary transition-colors resize-none'
               rows={1}
               style={{ minHeight: '44px', maxHeight: '150px' }}
+              disabled={isTyping}
             />
 
             {/* Slash command suggestions */}
             {showSuggestions && (
               <div className='absolute bottom-full mb-2 left-0 right-0 bg-background border border-gray-700 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto'>
-                {getAvailableSlashCommands().map((cmd, index) => (
-                  <div
-                    key={cmd.name}
-                    className={`p-3 cursor-pointer hover:bg-gray-700 ${
-                      index === suggestionIndex ? 'bg-gray-700' : ''
-                    }`}
-                    onClick={() => {
-                      setInputValue(`/${cmd.name} `);
-                      setShowSuggestions(false);
-                      setSuggestionIndex(-1);
-                      textareaRef.current?.focus();
-                    }}
-                  >
-                    <div className='font-semibold text-primary'>
-                      /{cmd.name}
+                {(() => {
+                  // Extract the filter text from the input (text after the '/')
+                  const filterText = inputValue.startsWith('/')
+                    ? inputValue.substring(1)
+                    : '';
+                  const commands = getAvailableSlashCommands(filterText);
+
+                  return commands.map((cmd, index) => (
+                    <div
+                      key={cmd.name}
+                      className={`p-3 cursor-pointer hover:bg-gray-700 ${
+                        index === suggestionIndex ? 'bg-gray-700' : ''
+                      }`}
+                      onClick={() => {
+                        setInputValue(`/${cmd.name} `);
+                        setShowSuggestions(false);
+                        setSuggestionIndex(-1);
+                        textareaRef.current?.focus();
+                      }}
+                    >
+                      <div className='font-semibold text-primary'>
+                        /{cmd.name}
+                      </div>
+                      <div className='text-xs text-gray-300 leading-snug'>
+                        {cmd.description}
+                      </div>
                     </div>
-                    <div className='text-xs text-gray-300 leading-snug'>
-                      {cmd.description}
-                    </div>
-                  </div>
-                ))}
+                  ));
+                })()}
               </div>
             )}
           </div>
           <button
             onClick={handleSend}
-            disabled={!inputValue.trim()}
+            disabled={!inputValue.trim() || isTyping}
             className='bg-primary hover:bg-blue-600 p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
           >
             <Send className='w-5 h-5' />

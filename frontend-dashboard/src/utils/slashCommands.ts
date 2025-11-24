@@ -11,20 +11,6 @@ export interface SlashCommand {
 
 // Define available slash commands
 const slashCommands: Record<string, SlashCommand> = {
-  preflight: {
-    name: 'preflight',
-    description: 'SIM Swap, Device Swap and Number Verification',
-    handler: () => {
-      return 'Conduct preflight device integrity check';
-    },
-  },
-  qos: {
-    name: 'qos',
-    description: 'QoS profiles',
-    handler: () => {
-      return 'Get all available QoS profiles';
-    },
-  },
   'check-network-status': {
     name: 'check-network-status',
     description: 'Connected Network Type and Device Reachability Status',
@@ -38,6 +24,20 @@ const slashCommands: Record<string, SlashCommand> = {
       'Connected Network Type and Device Reachability Status Subscriptions',
     handler: () => {
       return 'Create a subscription on device network type change';
+    },
+  },
+  'preflight-check': {
+    name: 'preflight-check',
+    description: 'SIM Swap, Device Swap and Number Verification',
+    handler: () => {
+      return 'Conduct preflight device integrity check';
+    },
+  },
+  qos: {
+    name: 'qos',
+    description: 'QoS profiles',
+    handler: () => {
+      return 'Get all available QoS profiles';
     },
   },
   report: {
@@ -68,8 +68,8 @@ const slashCommands: Record<string, SlashCommand> = {
       return `Find closest edge computing node location from the drone kit`;
     },
   },
-  'deploy-app': {
-    name: 'deploy-app',
+  'deploy-edge-application': {
+    name: 'deploy-edge-application',
     description: 'Edge Application Management',
     handler: () => {
       return `deploy the fire spread prediction image in this edge computing node (image id: fire-spread-prediction:v2.0)`;
@@ -82,6 +82,13 @@ const slashCommands: Record<string, SlashCommand> = {
       return `Accept drone's incoming WebRTC call`;
     },
   },
+  'create-qod': {
+    name: 'create-qod',
+    description: 'Create QoD session',
+    handler: (param: string) => {
+      return `create a new QoD session for this webrtc media call using ${param}`;
+    },
+  },
   'terminate-webrtc-call': {
     name: 'terminate-webrtc-call',
     description: 'WebRTC Call Handling',
@@ -89,8 +96,8 @@ const slashCommands: Record<string, SlashCommand> = {
       return `Terminate drone's ongoing WebRTC call`;
     },
   },
-  'undeploy-app': {
-    name: 'undeploy-app',
+  'undeploy-edge-application': {
+    name: 'undeploy-edge-application',
     description: 'Edge Application Management',
     handler: () => {
       return `undeploy the fire spread prediction image`;
@@ -109,6 +116,13 @@ const slashCommands: Record<string, SlashCommand> = {
       'Connected Network Type and Device Reachability Status Subscriptions',
     handler: () => {
       return 'Cancel the network type subscription created earlier for drone kit';
+    },
+  },
+  'mission-complete': {
+    name: 'mission-complete',
+    description: 'Complete the current mission',
+    handler: () => {
+      return 'mission completed';
     },
   },
 };
@@ -135,8 +149,20 @@ export const executeSlashCommand = (input: string): string => {
   return cmd.handler(param);
 };
 
-export const getAvailableSlashCommands = (): SlashCommand[] => {
-  return Object.values(slashCommands);
+export const getAvailableSlashCommands = (
+  filter: string = ''
+): SlashCommand[] => {
+  const commands = Object.values(slashCommands);
+
+  if (!filter) {
+    return commands;
+  }
+
+  return commands.filter(
+    (cmd) =>
+      cmd.name.toLowerCase().includes(filter.toLowerCase()) ||
+      cmd.description.toLowerCase().includes(filter.toLowerCase())
+  );
 };
 
 export const isSlashCommand = (input: string): boolean => {
