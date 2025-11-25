@@ -263,7 +263,9 @@ async def undeploy_edge_application(deployment_id: str) -> str:
 
 
 @mcp.tool()
-async def verify_location(latitude: float, longitude: float, radius: int = 2000) -> str:
+async def verify_location(
+    latitude: float, longitude: float, radius: int = 2000, device_id: str = "drone-001"
+) -> str:
     """
     Verify if a location is within a specified radius of the target coordinates
 
@@ -278,7 +280,9 @@ async def verify_location(latitude: float, longitude: float, radius: int = 2000)
         - lastLocationTime: Time of last location check (e.g., "30 seconds ago")
     """
     log(f"🔧 Tool called: verify_location")
-    log(f"   Parameters: latitude={latitude}, longitude={longitude}, radius={radius}m")
+    log(
+        f"   Parameters: latitude={latitude}, longitude={longitude}, radius={radius}m, device_id={device_id}"
+    )
 
     # Calculate time 30 seconds ago from now
     last_location_time = datetime.now() - timedelta(seconds=30)
@@ -288,7 +292,7 @@ async def verify_location(latitude: float, longitude: float, radius: int = 2000)
     result_data = {"verificationResult": "TRUE", "lastLocationTime": time_ago_str}
 
     log(f"✅ Tool completed: verify_location")
-    log(f"   Result: Verified within {radius}m radius")
+    log(f"   Result: Verified within {radius}m radius for device '{device_id}'")
     log(f"   Last location time: {last_location_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
     return json.dumps(result_data)

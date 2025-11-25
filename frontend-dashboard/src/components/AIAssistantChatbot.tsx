@@ -19,6 +19,11 @@ import { useChatStore } from '../store/chatStore';
 import type { ChatMessage } from '../store/chatStore';
 import { useSystemStatusStore } from '../store/systemStatusStore';
 import type { Subscription } from '../store/subscriptionsStore';
+import {
+  isSlashCommand,
+  executeSlashCommand,
+  getAvailableSlashCommands,
+} from '../utils/slashCommands';
 
 interface AIAssistantChatbotProps {
   onMoveMap?: (address: string, lat: number, lon: number) => void;
@@ -88,6 +93,8 @@ const AIAssistantChatbot = ({
   );
 
   const [inputValue, setInputValue] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestionIndex, setSuggestionIndex] = useState(-1);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -95,13 +102,438 @@ const AIAssistantChatbot = ({
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 150)}px`;
+      textareaRef.current.style.height = `${Math.min(
+        textareaRef.current.scrollHeight,
+        150
+      )}px`;
     }
   }, [inputValue]);
+
+  // Handle input change with suggestions
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setInputValue(value);
+
+    // Show suggestions only if the input starts with '/' and we haven't finished typing the command
+    // Don't show suggestions if there are parameters after the command (indicated by a space)
+    let showSuggestions = false;
+    if (value.startsWith('/')) {
+      // Check if the value contains a space after the command part
+      // If there's no space after the '/', show suggestions (still typing command)
+      // If there's a space after the '/', don't show suggestions (parameters entered)
+      const firstSpaceIndex = value.indexOf(' ');
+      const commandWithoutSlash = value.substring(1).split(' ')[0];
+
+      // Only show suggestions if there's no space and the partial command has potential matches
+      if (firstSpaceIndex === -1) {
+        // Check if there are any commands that start with the current input
+        const availableCommands =
+          getAvailableSlashCommands(commandWithoutSlash);
+        showSuggestions = availableCommands.length > 0;
+      }
+    }
+
+    setShowSuggestions(showSuggestions);
+  };
 
   // Helper to generate unique key for tool call
   const getToolKey = (messageIndex: number, toolIndex: number) =>
     `${messageIndex}-${toolIndex}`;
+
+  // Common event handling logic for both regular messages and slash commands
+  const handleStreamEvent = (
+    event: StreamEvent,
+    assistantMessage: ChatMessage,
+    currentToolCall: {
+      tool: string;
+      arguments: Record<string, unknown>;
+      result?: unknown;
+    } | null
+  ) => {
+    try {
+      if (event.type === 'message_start') {
+        // Set conversation ID from backend
+        setConversationId(event.data.conversation_id);
+      } else if (event.type === 'content_delta') {
+        // Stream text content
+        assistantMessage.content += event.data.content;
+
+        // Update message in real-time
+        updateOrAddAssistantMessage({ ...assistantMessage });
+      } else if (event.type === 'tool_call') {
+        // Tool being called
+        currentToolCall = {
+          tool: event.data.tool || 'unknown',
+          arguments: event.data.arguments || {},
+        };
+
+        if (!assistantMessage.toolCalls) {
+          assistantMessage.toolCalls = [];
+        }
+        assistantMessage.toolCalls.push(currentToolCall);
+
+        // Update UI to show tool call
+        updateOrAddAssistantMessage({ ...assistantMessage });
+      } else if (event.type === 'tool_result') {
+        // Tool execution result
+        if (currentToolCall && currentToolCall.tool === event.data.tool) {
+          currentToolCall.result = event.data.result;
+        }
+
+        // Update tool call with result
+        const toolCall = assistantMessage.toolCalls?.find(
+          (tc) => tc.tool === event.data.tool
+        );
+        if (toolCall) {
+          toolCall.result = event.data.result;
+        }
+
+        // Check if this is geocode_address tool and move map
+        if (
+          event.data.tool === 'geocode_address' &&
+          onMoveMap &&
+          event.data.result
+        ) {
+          const result = event.data.result as any;
+          if (result.latitude && result.longitude && !result.error) {
+            onMoveMap(
+              result.address || result.display_name,
+              result.latitude,
+              result.longitude
+            );
+          }
+        }
+
+        // Check if this is verify_location tool and add drone kit marker
+        if (event.data.tool === 'verify_location' && event.data.result) {
+          const result = event.data.result as any;
+          if (result.verificationResult === 'TRUE') {
+            // Set drone active status
+            setDroneActive(true);
+
+            // Get coordinates from the current tool call arguments
+            const toolCall = assistantMessage.toolCalls?.find(
+              (tc) => tc.tool === 'verify_location'
+            );
+            if (toolCall && toolCall.arguments) {
+              const { latitude, longitude } = toolCall.arguments;
+              if (latitude && longitude) {
+                // Add drone kit marker (also sets location for heatmap)
+                if (onAddDroneKitMarker) {
+                  onAddDroneKitMarker(latitude as number, longitude as number);
+                }
+              }
+            }
+          }
+        }
+
+        // Check if this is discover_edge_node tool and add edge node marker
+        if (
+          event.data.tool === 'discover_edge_node' &&
+          onAddEdgeNodeMarker &&
+          event.data.result
+        ) {
+          const result = event.data.result as any;
+          if (result.edgeCloudZoneName && !result.error) {
+            // Determine reference location: droneKitLocation > incidentLocation > baseLocation
+            let refLocation = null;
+
+            if (droneKitLocation) {
+              refLocation = droneKitLocation;
+            } else if (incidentLocation) {
+              refLocation = incidentLocation;
+            } else if (baseLocation) {
+              refLocation = baseLocation;
+            }
+
+            if (refLocation) {
+              const edgeLat = refLocation.lat + 0.01; // North
+              const edgeLon = refLocation.lon - 0.01; // West
+              onAddEdgeNodeMarker(edgeLat, edgeLon, result.edgeCloudZoneName);
+            }
+          }
+        }
+
+        // Check if this is deploy_edge_application tool and update deployment info
+        if (
+          event.data.tool === 'deploy_edge_application' &&
+          onUpdateEdgeDeployment &&
+          event.data.result
+        ) {
+          const result = event.data.result as any;
+          if (result.deployment_id && result.status && !result.error) {
+            onUpdateEdgeDeployment(
+              result.deployment_id,
+              result.image_id,
+              result.edge_zone_name,
+              result.status
+            );
+          }
+        }
+
+        // Check if this is undeploy_edge_application tool and clear deployment
+        if (
+          event.data.tool === 'undeploy_edge_application' &&
+          event.data.result !== undefined
+        ) {
+          // Get deployment_id from the matching tool call in assistantMessage
+          const toolCall = assistantMessage.toolCalls?.find(
+            (tc) => tc.tool === 'undeploy_edge_application'
+          );
+          if (toolCall && toolCall.arguments) {
+            const deploymentId = (toolCall.arguments as any).deployment_id;
+            if (deploymentId && onClearEdgeDeployment) {
+              onClearEdgeDeployment();
+            }
+          }
+        }
+
+        // Check if this is subscribe_geofencing tool and add geofencing circle
+        if (event.data.tool === 'subscribe_geofencing' && event.data.result) {
+          const result = event.data.result as any;
+          if (
+            result.subscription_id &&
+            result.latitude &&
+            result.longitude &&
+            result.radius &&
+            !result.error
+          ) {
+            // Add geofencing circle to map
+            if (onAddGeofencingCircle) {
+              onAddGeofencingCircle(
+                result.latitude,
+                result.longitude,
+                result.radius
+              );
+            }
+
+            // Add subscription to active subscriptions list
+            if (onAddSubscription) {
+              const subscription: Subscription = {
+                id: result.subscription_id,
+                type: 'Geofencing',
+                deviceId: result.device_id || 'unknown',
+                createdAt: new Date().toISOString(),
+                parameters: {
+                  latitude: result.latitude,
+                  longitude: result.longitude,
+                  radius: result.radius,
+                },
+              };
+              onAddSubscription(subscription);
+            }
+          }
+        }
+
+        // Check if this is unsubscribe_geofencing tool and remove subscription
+        if (
+          event.data.tool === 'unsubscribe_geofencing' &&
+          event.data.result !== undefined
+        ) {
+          // Get subscription_id from the matching tool call in assistantMessage
+          const toolCall = assistantMessage.toolCalls?.find(
+            (tc) => tc.tool === 'unsubscribe_geofencing'
+          );
+          if (toolCall && toolCall.arguments) {
+            const subscriptionId = (toolCall.arguments as any).subscription_id;
+            if (subscriptionId && onRemoveSubscription) {
+              onRemoveSubscription(subscriptionId as string);
+            }
+          }
+        }
+
+        // Check if this is subscribe_connected_network tool and add subscription
+        if (
+          event.data.tool === 'subscribe_connected_network' &&
+          event.data.result
+        ) {
+          const result = event.data.result as any;
+          if (result.subscription_id && result.device_id && !result.error) {
+            // Add subscription to active subscriptions list
+            if (onAddSubscription) {
+              const subscription: Subscription = {
+                id: result.subscription_id,
+                type: 'Network Type & Reachability',
+                deviceId: result.device_id,
+                createdAt: new Date().toISOString(),
+              };
+              onAddSubscription(subscription);
+            }
+          }
+        }
+
+        // Check if this is unsubscribe_connected_network tool and remove subscription
+        if (
+          event.data.tool === 'unsubscribe_connected_network' &&
+          event.data.result !== undefined
+        ) {
+          // Get subscription_id from the matching tool call in assistantMessage
+          const toolCall = assistantMessage.toolCalls?.find(
+            (tc) => tc.tool === 'unsubscribe_connected_network'
+          );
+          if (toolCall && toolCall.arguments) {
+            const subscriptionId = (toolCall.arguments as any).subscription_id;
+            if (subscriptionId && onRemoveSubscription) {
+              onRemoveSubscription(subscriptionId as string);
+            }
+          }
+        }
+
+        // Check if this is handle_webrtc_call tool and update stream/edge status
+        if (
+          event.data.tool === 'handle_webrtc_call' &&
+          event.data.result !== undefined
+        ) {
+          // Get type parameter from tool arguments
+          const toolCall = assistantMessage.toolCalls?.find(
+            (tc) => tc.tool === 'handle_webrtc_call'
+          );
+          if (toolCall && toolCall.arguments) {
+            const { type } = toolCall.arguments as any;
+            const result = event.data.result as any;
+
+            if (
+              type === 'accept_media_session' &&
+              result &&
+              result.sdp &&
+              !result.error
+            ) {
+              // Activate stream and edge processing
+              setStreamActive(true);
+              setTimeout(() => {
+                setEdgeProcessing(true);
+              }, 30 * 1000);
+              // Store session ID
+              if (result.session_id) {
+                setSessionId(result.session_id);
+              }
+            } else if (type === 'cancel_media_session') {
+              // Deactivate stream and edge processing
+              setStreamActive(false);
+              setEdgeProcessing(false);
+              // Clear session ID
+              setSessionId(null);
+            }
+          }
+        }
+
+        // Check if this is create_quality_on_demand tool and update QoS profile
+        if (
+          event.data.tool === 'create_quality_on_demand' &&
+          event.data.result !== undefined
+        ) {
+          const result = event.data.result as any;
+          if (
+            result &&
+            result.qos_profile &&
+            result.status === 'active' &&
+            !result.error
+          ) {
+            // Update QoS profile in store
+            setCurrentQoSProfile(result.qos_profile);
+            // Store QoD session ID
+            if (result.session_id) {
+              setQodSessionId(result.session_id);
+            }
+            console.log(`QoS profile updated to: ${result.qos_profile}`);
+            console.log(`QoD session ID: ${result.session_id}`);
+          }
+        }
+
+        // Update UI
+        updateOrAddAssistantMessage({ ...assistantMessage });
+      } else if (event.type === 'tool_error') {
+        // Tool execution error
+        if (currentToolCall) {
+          currentToolCall.result = {
+            error: event.data.error || 'Tool execution failed',
+          };
+        }
+      } else if (event.type === 'mission_complete') {
+        // Mission completion - reset all dashboard state after 2 second delay
+        console.log(
+          '🎯 Mission complete event received - resetting dashboard in 2 seconds'
+        );
+
+        // Keep typing indicator active for 2 seconds
+        setIsTyping(true);
+
+        // Wait 2 seconds before resetting
+        setTimeout(() => {
+          // Reset all system statuses
+          resetAllStatuses();
+
+          // Clear chat history
+          clearChat();
+
+          // Reset dashboard via parent callback
+          if (onResetDashboard) {
+            onResetDashboard();
+          }
+
+          setIsTyping(false);
+        }, 2000);
+      } else if (event.type === 'message_complete') {
+        // Message streaming complete
+        setIsTyping(false);
+      } else if (event.type === 'error') {
+        // Error occurred
+        setIsTyping(false);
+
+        // Show error message
+        const errorMessage: ChatMessage = {
+          role: 'assistant',
+          content: `Sorry, an error occurred: ${event.data.error}`,
+          timestamp: new Date().toISOString(),
+        };
+        addMessage(errorMessage);
+      }
+    } catch (eventError) {
+      console.error('Error processing event:', eventError);
+      setIsTyping(false);
+    }
+  };
+
+  // Common function to process messages (for both slash commands and regular messages)
+  const processMessage = async (message: string, userMessage: ChatMessage) => {
+    // Add user message
+    addMessage(userMessage);
+
+    // Reset input and set typing indicator
+    setInputValue('');
+    setIsTyping(true);
+
+    // Prepare assistant message for streaming
+    const assistantMessage: ChatMessage = {
+      role: 'assistant',
+      content: '',
+      timestamp: new Date().toISOString(),
+      toolCalls: [],
+    };
+
+    // Track current tool being called
+    const currentToolCall: {
+      tool: string;
+      arguments: Record<string, unknown>;
+      result?: unknown;
+    } | null = null;
+
+    try {
+      await sendMessage(message, conversationId, (event: StreamEvent) => {
+        handleStreamEvent(event, assistantMessage, currentToolCall);
+      });
+    } catch (error) {
+      console.error('Failed to send message to backend:', error);
+      setIsTyping(false);
+      const errorMessage: ChatMessage = {
+        role: 'assistant',
+        content:
+          'Sorry, I encountered an error. Please make sure the backend server is running on port 4000.',
+        timestamp: new Date().toISOString(),
+      };
+      addMessage(errorMessage);
+    }
+  };
 
   // Subscribe to system events
   useEffect(() => {
@@ -164,402 +596,62 @@ const AIAssistantChatbot = ({
   }, [messages]);
 
   const handleSend = async () => {
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() || isTyping) return;
 
-    // Add user message
-    const userMessage: ChatMessage = {
-      role: 'user',
-      content: inputValue,
-      timestamp: new Date().toISOString(),
-    };
-
-    addMessage(userMessage);
-    const messageText = inputValue;
-    setInputValue('');
-    setIsTyping(true);
-
-    // Prepare assistant message for streaming
-    const assistantMessage: ChatMessage = {
-      role: 'assistant',
-      content: '',
-      timestamp: new Date().toISOString(),
-      toolCalls: [],
-    };
-
-    // Track current tool being called
-    let currentToolCall: {
-      tool: string;
-      arguments: Record<string, unknown>;
-      result?: unknown;
-    } | null = null;
-
-    try {
-      await sendMessage(messageText, conversationId, (event: StreamEvent) => {
-        try {
-          if (event.type === 'message_start') {
-            // Set conversation ID from backend
-            setConversationId(event.data.conversation_id);
-          } else if (event.type === 'content_delta') {
-            // Stream text content
-            assistantMessage.content += event.data.content;
-
-            // Update message in real-time
-            updateOrAddAssistantMessage({ ...assistantMessage });
-          } else if (event.type === 'tool_call') {
-            // Tool being called
-            currentToolCall = {
-              tool: event.data.tool || 'unknown',
-              arguments: event.data.arguments || {},
-            };
-
-            if (!assistantMessage.toolCalls) {
-              assistantMessage.toolCalls = [];
-            }
-            assistantMessage.toolCalls.push(currentToolCall);
-
-            // Update UI to show tool call
-            updateOrAddAssistantMessage({ ...assistantMessage });
-          } else if (event.type === 'tool_result') {
-            // Tool execution result
-            if (currentToolCall && currentToolCall.tool === event.data.tool) {
-              currentToolCall.result = event.data.result;
-            }
-
-            // Update tool call with result
-            const toolCall = assistantMessage.toolCalls?.find(
-              (tc) => tc.tool === event.data.tool
-            );
-            if (toolCall) {
-              toolCall.result = event.data.result;
-            }
-
-            // Check if this is geocode_address tool and move map
-            if (
-              event.data.tool === 'geocode_address' &&
-              onMoveMap &&
-              event.data.result
-            ) {
-              const result = event.data.result as any;
-              if (result.latitude && result.longitude && !result.error) {
-                onMoveMap(
-                  result.address || result.display_name,
-                  result.latitude,
-                  result.longitude
-                );
-              }
-            }
-
-            // Check if this is verify_location tool and add drone kit marker
-            if (event.data.tool === 'verify_location' && event.data.result) {
-              const result = event.data.result as any;
-              if (result.verificationResult === 'TRUE') {
-                // Set drone active status
-                setDroneActive(true);
-
-                // Get coordinates from the current tool call arguments
-                const toolCall = assistantMessage.toolCalls?.find(
-                  (tc) => tc.tool === 'verify_location'
-                );
-                if (toolCall && toolCall.arguments) {
-                  const { latitude, longitude } = toolCall.arguments;
-                  if (latitude && longitude) {
-                    // Add drone kit marker (also sets location for heatmap)
-                    if (onAddDroneKitMarker) {
-                      onAddDroneKitMarker(
-                        latitude as number,
-                        longitude as number
-                      );
-                    }
-                  }
-                }
-              }
-            }
-
-            // Check if this is discover_edge_node tool and add edge node marker
-            if (
-              event.data.tool === 'discover_edge_node' &&
-              onAddEdgeNodeMarker &&
-              event.data.result
-            ) {
-              const result = event.data.result as any;
-              if (result.edgeCloudZoneName && !result.error) {
-                // Determine reference location: droneKitLocation > incidentLocation > baseLocation
-                let refLocation = null;
-
-                if (droneKitLocation) {
-                  refLocation = droneKitLocation;
-                } else if (incidentLocation) {
-                  refLocation = incidentLocation;
-                } else if (baseLocation) {
-                  refLocation = baseLocation;
-                }
-
-                if (refLocation) {
-                  const edgeLat = refLocation.lat + 0.01; // North
-                  const edgeLon = refLocation.lon - 0.01; // West
-                  onAddEdgeNodeMarker(
-                    edgeLat,
-                    edgeLon,
-                    result.edgeCloudZoneName
-                  );
-                }
-              }
-            }
-
-            // Check if this is deploy_edge_application tool and update deployment info
-            if (
-              event.data.tool === 'deploy_edge_application' &&
-              onUpdateEdgeDeployment &&
-              event.data.result
-            ) {
-              const result = event.data.result as any;
-              if (result.deployment_id && result.status && !result.error) {
-                onUpdateEdgeDeployment(
-                  result.deployment_id,
-                  result.image_id,
-                  result.edge_zone_name,
-                  result.status
-                );
-              }
-            }
-
-            // Check if this is undeploy_edge_application tool and clear deployment
-            if (
-              event.data.tool === 'undeploy_edge_application' &&
-              event.data.result !== undefined
-            ) {
-              // Get deployment_id from tool arguments
-              if (currentToolCall && currentToolCall.arguments) {
-                const deploymentId = currentToolCall.arguments.deployment_id;
-                if (deploymentId && onClearEdgeDeployment) {
-                  onClearEdgeDeployment();
-                }
-              }
-            }
-
-            // Check if this is subscribe_geofencing tool and add geofencing circle
-            if (
-              event.data.tool === 'subscribe_geofencing' &&
-              event.data.result
-            ) {
-              const result = event.data.result as any;
-              if (
-                result.subscription_id &&
-                result.latitude &&
-                result.longitude &&
-                result.radius &&
-                !result.error
-              ) {
-                // Add geofencing circle to map
-                if (onAddGeofencingCircle) {
-                  onAddGeofencingCircle(
-                    result.latitude,
-                    result.longitude,
-                    result.radius
-                  );
-                }
-
-                // Add subscription to active subscriptions list
-                if (onAddSubscription) {
-                  const subscription: Subscription = {
-                    id: result.subscription_id,
-                    type: 'Geofencing',
-                    deviceId: result.device_id || 'unknown',
-                    createdAt: new Date().toISOString(),
-                    parameters: {
-                      latitude: result.latitude,
-                      longitude: result.longitude,
-                      radius: result.radius,
-                    },
-                  };
-                  onAddSubscription(subscription);
-                }
-              }
-            }
-
-            // Check if this is unsubscribe_geofencing tool and remove subscription
-            if (
-              event.data.tool === 'unsubscribe_geofencing' &&
-              event.data.result !== undefined
-            ) {
-              // Get subscription_id from tool arguments
-              if (currentToolCall && currentToolCall.arguments) {
-                const subscriptionId = (currentToolCall.arguments as any)
-                  .subscription_id;
-                if (subscriptionId && onRemoveSubscription) {
-                  onRemoveSubscription(subscriptionId as string);
-                }
-              }
-            }
-
-            // Check if this is subscribe_connected_network tool and add subscription
-            if (
-              event.data.tool === 'subscribe_connected_network' &&
-              event.data.result
-            ) {
-              const result = event.data.result as any;
-              if (result.subscription_id && result.device_id && !result.error) {
-                // Add subscription to active subscriptions list
-                if (onAddSubscription) {
-                  const subscription: Subscription = {
-                    id: result.subscription_id,
-                    type: 'Network Type & Reachability',
-                    deviceId: result.device_id,
-                    createdAt: new Date().toISOString(),
-                  };
-                  onAddSubscription(subscription);
-                }
-              }
-            }
-
-            // Check if this is unsubscribe_connected_network tool and remove subscription
-            if (
-              event.data.tool === 'unsubscribe_connected_network' &&
-              event.data.result !== undefined
-            ) {
-              // Get subscription_id from tool arguments
-              if (currentToolCall && currentToolCall.arguments) {
-                const subscriptionId = (currentToolCall.arguments as any)
-                  .subscription_id;
-                if (subscriptionId && onRemoveSubscription) {
-                  onRemoveSubscription(subscriptionId as string);
-                }
-              }
-            }
-
-            // Check if this is handle_webrtc_call tool and update stream/edge status
-            if (
-              event.data.tool === 'handle_webrtc_call' &&
-              event.data.result !== undefined
-            ) {
-              // Get type parameter from tool arguments
-              const toolCall = assistantMessage.toolCalls?.find(
-                (tc) => tc.tool === 'handle_webrtc_call'
-              );
-              if (toolCall && toolCall.arguments) {
-                const { type } = toolCall.arguments as any;
-                const result = event.data.result as any;
-
-                if (
-                  type === 'accept_media_session' &&
-                  result &&
-                  result.sdp &&
-                  !result.error
-                ) {
-                  // Activate stream and edge processing
-                  setStreamActive(true);
-                  setTimeout(() => {
-                    setEdgeProcessing(true);
-                  }, 30 * 1000);
-                  // Store session ID
-                  if (result.session_id) {
-                    setSessionId(result.session_id);
-                  }
-                } else if (type === 'cancel_media_session') {
-                  // Deactivate stream and edge processing
-                  setStreamActive(false);
-                  setEdgeProcessing(false);
-                  // Clear session ID
-                  setSessionId(null);
-                }
-              }
-            }
-
-            // Check if this is create_quality_on_demand tool and update QoS profile
-            if (
-              event.data.tool === 'create_quality_on_demand' &&
-              event.data.result !== undefined
-            ) {
-              const result = event.data.result as any;
-              if (
-                result &&
-                result.qos_profile &&
-                result.status === 'active' &&
-                !result.error
-              ) {
-                // Update QoS profile in store
-                setCurrentQoSProfile(result.qos_profile);
-                // Store QoD session ID
-                if (result.session_id) {
-                  setQodSessionId(result.session_id);
-                }
-                console.log(`QoS profile updated to: ${result.qos_profile}`);
-                console.log(`QoD session ID: ${result.session_id}`);
-              }
-            }
-
-            // Update UI
-            updateOrAddAssistantMessage({ ...assistantMessage });
-          } else if (event.type === 'tool_error') {
-            // Tool execution error
-            if (currentToolCall) {
-              currentToolCall.result = {
-                error: event.data.error || 'Tool execution failed',
-              };
-            }
-          } else if (event.type === 'mission_complete') {
-            // Mission completion - reset all dashboard state after 2 second delay
-            console.log(
-              '🎯 Mission complete event received - resetting dashboard in 2 seconds'
-            );
-
-            // Keep typing indicator active for 2 seconds
-            setIsTyping(true);
-
-            // Wait 2 seconds before resetting
-            setTimeout(() => {
-              // Reset all system statuses
-              resetAllStatuses();
-
-              // Clear chat history
-              clearChat();
-
-              // Reset dashboard via parent callback
-              if (onResetDashboard) {
-                onResetDashboard();
-              }
-
-              setIsTyping(false);
-            }, 2000);
-          } else if (event.type === 'message_complete') {
-            // Message streaming complete
-            setIsTyping(false);
-          } else if (event.type === 'error') {
-            // Error occurred
-            setIsTyping(false);
-
-            // Show error message
-            const errorMessage: ChatMessage = {
-              role: 'assistant',
-              content: `Sorry, an error occurred: ${event.data.error}`,
-              timestamp: new Date().toISOString(),
-            };
-            addMessage(errorMessage);
-          }
-        } catch (eventError) {
-          console.error('Error processing event:', eventError);
-          setIsTyping(false);
-        }
-      });
-    } catch (error) {
-      console.error('Failed to send message:', error);
-      setIsTyping(false);
-
-      // Show error message
-      const errorMessage: ChatMessage = {
-        role: 'assistant',
-        content:
-          'Sorry, I encountered an error. Please make sure the backend server is running on port 4000.',
+    // Check if this is a slash command
+    if (isSlashCommand(inputValue)) {
+      const message = executeSlashCommand(inputValue);
+      // Create user message showing the command
+      const userMessage: ChatMessage = {
+        role: 'user',
+        content: message,
         timestamp: new Date().toISOString(),
       };
-      addMessage(errorMessage);
+      await processMessage(message, userMessage);
+    } else {
+      const userMessage: ChatMessage = {
+        role: 'user',
+        content: inputValue,
+        timestamp: new Date().toISOString(),
+      };
+      // Regular message handling use user inputs
+      await processMessage(inputValue, userMessage);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Extract the filter text from the input (text after the '/')
+    const filterText = inputValue.startsWith('/')
+      ? inputValue.substring(1)
+      : '';
+    const commands = showSuggestions
+      ? getAvailableSlashCommands(filterText)
+      : [];
+
     if (e.key === 'Enter' && !e.shiftKey) {
+      if (showSuggestions && suggestionIndex >= 0 && commands.length > 0) {
+        // Use the currently highlighted suggestion instead of sending
+        e.preventDefault();
+        const selected = commands[suggestionIndex];
+        if (selected) {
+          setInputValue(`/${selected.name} `);
+          setShowSuggestions(false);
+          setSuggestionIndex(-1);
+        }
+      } else {
+        e.preventDefault();
+        handleSend();
+      }
+    } else if (e.key === 'ArrowDown' && showSuggestions) {
       e.preventDefault();
-      handleSend();
+      setSuggestionIndex((prev) => (prev < commands.length - 1 ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp' && showSuggestions) {
+      e.preventDefault();
+      setSuggestionIndex((prev) => (prev > 0 ? prev - 1 : commands.length - 1));
+    } else if (e.key === 'Escape' && showSuggestions) {
+      e.preventDefault();
+      setShowSuggestions(false);
+      setSuggestionIndex(-1);
     }
   };
 
@@ -568,7 +660,7 @@ const AIAssistantChatbot = ({
       <div className='p-4 pb-2 flex-shrink-0'>
         <h2 className='text-xl font-semibold flex items-center space-x-2'>
           <Bot className='w-5 h-5 text-primary' />
-          <span>AI Assistant</span>
+          <span>AI Agent Assistant</span>
         </h2>
       </div>
 
@@ -897,21 +989,57 @@ const AIAssistantChatbot = ({
       <div className='flex-shrink-0 px-4 pb-4'>
         {/* Input Field - Changed to textarea to support scrolling for long placeholder text */}
         <div className='flex items-center space-x-2'>
-          <textarea
-            ref={textareaRef}
-            value={inputValue}
-            onChange={(e) => {
-              setInputValue(e.target.value);
-            }}
-            onKeyDown={handleKeyDown}
-            placeholder='Ask about network status, drone location, devices count...'
-            className='flex-1 bg-background border border-gray-700 rounded-lg px-4 py-2 text-base focus:outline-none focus:border-primary transition-colors resize-none'
-            rows={1}
-            style={{ minHeight: '44px', maxHeight: '150px' }}
-          />
+          <div className='relative flex-1'>
+            <textarea
+              ref={textareaRef}
+              value={inputValue}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder='Ask about network status, drone location, devices count...'
+              className='w-full bg-background border border-gray-700 rounded-lg px-4 py-2 text-base focus:outline-none focus:border-primary transition-colors resize-none'
+              rows={1}
+              style={{ minHeight: '44px', maxHeight: '150px' }}
+              disabled={isTyping}
+            />
+
+            {/* Slash command suggestions */}
+            {showSuggestions && (
+              <div className='absolute bottom-full mb-2 left-0 right-0 bg-background border border-gray-700 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto'>
+                {(() => {
+                  // Extract the filter text from the input (text after the '/')
+                  const filterText = inputValue.startsWith('/')
+                    ? inputValue.substring(1)
+                    : '';
+                  const commands = getAvailableSlashCommands(filterText);
+
+                  return commands.map((cmd, index) => (
+                    <div
+                      key={cmd.name}
+                      className={`p-3 cursor-pointer hover:bg-gray-700 ${
+                        index === suggestionIndex ? 'bg-gray-700' : ''
+                      }`}
+                      onClick={() => {
+                        setInputValue(`/${cmd.name} `);
+                        setShowSuggestions(false);
+                        setSuggestionIndex(-1);
+                        textareaRef.current?.focus();
+                      }}
+                    >
+                      <div className='font-semibold text-primary'>
+                        /{cmd.name}
+                      </div>
+                      <div className='text-xs text-gray-300 leading-snug'>
+                        {cmd.description}
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+            )}
+          </div>
           <button
             onClick={handleSend}
-            disabled={!inputValue.trim()}
+            disabled={!inputValue.trim() || isTyping}
             className='bg-primary hover:bg-blue-600 p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
           >
             <Send className='w-5 h-5' />

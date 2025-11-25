@@ -41,7 +41,7 @@ AVAILABLE TOOLS (CAMARA APIs via MCP):
 1. get_qos_profiles - Get QoS profiles (QOS_H/QOS_M/QOS_L specifications)
 2. get_connected_network - Get network type (4G/5G) and reachability status (device_id required)
 3. geocode_address - Convert street address to lat/lon coordinates
-4. verify_location - Verify drone arrival at target location (lat, lon, radius)
+4. verify_location - Verify drone arrival at target location (lat, lon, radius and device_id)
 5. discover_edge_node - Find nearest edge zone for device_id
 6. deploy_edge_application - Deploy container image to edge zone (image_id, edge_zone_name)
 7. undeploy_edge_application - Remove edge deployment (deployment_id)
@@ -164,6 +164,7 @@ User: "Conduct preflight integrity check" or "Check device integrity for drone k
 
             # Send completion signal
             yield {"type": "complete", "data": {}}
+            print("Mission completed")
             return
 
         # Get MCP tools in LLM format
