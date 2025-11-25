@@ -146,6 +146,10 @@ export const executeSlashCommand = (input: string): string => {
   const { command, param } = parsed;
   const cmd = slashCommands[command.toLowerCase()];
 
+  if (!cmd) {
+    throw new Error(`Unknown command: ${command}`);
+  }
+
   return cmd.handler(param);
 };
 
@@ -166,5 +170,12 @@ export const getAvailableSlashCommands = (
 };
 
 export const isSlashCommand = (input: string): boolean => {
-  return input.trim().startsWith('/') && parseSlashCommand(input) !== null;
+  if (!input.trim().startsWith('/')) return false;
+
+  // Parse the command to check if it exists in our command list
+  const parsed = parseSlashCommand(input);
+  const { command } = parsed;
+
+  // Check if the command exists in our commands object
+  return command in slashCommands;
 };

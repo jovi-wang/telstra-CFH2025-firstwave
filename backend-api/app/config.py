@@ -7,8 +7,10 @@ class Settings:
 
     # LLM - Google Gemini (OpenAI-compatible endpoint)
     LLM_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
-    LLM_API_KEY: str = "xxx"
-    LLM_MODEL: str = "gemini-2.0-flash-lite"
+    LLM_API_KEY: str = "AIzaSyCRyfXGRHLoQhnwxVin0hWCX_bw225_H2o"
+    # LLM_API_KEY: str = "AIzaSyDjH1PZ_e5srMvnJ338vwPTUtpeL4JY-7U"
+
+    LLM_MODEL: str = "gemini-2.0-flash"
 
     # MCP Server (running from within backend-api directory with relative path)
     MCP_SERVER_COMMAND: str = ".venv/bin/python"

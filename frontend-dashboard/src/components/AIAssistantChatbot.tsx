@@ -122,7 +122,15 @@ const AIAssistantChatbot = ({
       // If there's no space after the '/', show suggestions (still typing command)
       // If there's a space after the '/', don't show suggestions (parameters entered)
       const firstSpaceIndex = value.indexOf(' ');
-      showSuggestions = firstSpaceIndex === -1; // No space found, still typing command
+      const commandWithoutSlash = value.substring(1).split(' ')[0];
+
+      // Only show suggestions if there's no space and the partial command has potential matches
+      if (firstSpaceIndex === -1) {
+        // Check if there are any commands that start with the current input
+        const availableCommands =
+          getAvailableSlashCommands(commandWithoutSlash);
+        showSuggestions = availableCommands.length > 0;
+      }
     }
 
     setShowSuggestions(showSuggestions);
@@ -987,11 +995,7 @@ const AIAssistantChatbot = ({
               value={inputValue}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              placeholder={
-                isTyping
-                  ? 'AI assistant is responding...'
-                  : 'Ask about network status, drone location, devices count...'
-              }
+              placeholder='Ask about network status, drone location, devices count...'
               className='w-full bg-background border border-gray-700 rounded-lg px-4 py-2 text-base focus:outline-none focus:border-primary transition-colors resize-none'
               rows={1}
               style={{ minHeight: '44px', maxHeight: '150px' }}
