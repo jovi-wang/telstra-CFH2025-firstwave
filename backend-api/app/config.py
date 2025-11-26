@@ -7,8 +7,7 @@ class Settings:
 
     # LLM - Google Gemini (OpenAI-compatible endpoint)
     LLM_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
-    LLM_API_KEY: str = "AIzaSyCRyfXGRHLoQhnwxVin0hWCX_bw225_H2o"
-    # LLM_API_KEY: str = "AIzaSyDjH1PZ_e5srMvnJ338vwPTUtpeL4JY-7U"
+    LLM_API_KEY: str = "AIzaSyCkirWpK4n4dSQKGAYY3nl507Vsoa1JES4"
 
     LLM_MODEL: str = "gemini-2.0-flash"
 

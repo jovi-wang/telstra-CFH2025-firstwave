@@ -34,7 +34,7 @@ class LLMService:
                 model=settings.LLM_MODEL,
                 messages=messages,
                 tools=tools,
-                temperature=1.0,
+                temperature=0,
                 stream=True,
             )
 

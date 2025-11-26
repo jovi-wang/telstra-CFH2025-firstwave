@@ -17,6 +17,7 @@ This system demonstrates an innovative disaster response solution combining dron
 6. **QoS Management**: Dynamically adjusts network quality (QoS profiles) based on network conditions
 7. **Real-time Monitoring**: Tracks drone location, network connectivity, and region device count with heatmap visualization
 8. **AI Assistance**: Natural language queries for system status and mission management
+9. **Slash Commands**: Quick actions via slash commands in chatbot interface
 
 ## 📸 Dashboard Screenshots
 
@@ -280,6 +281,37 @@ Dashboard: Removes geofencing circle, stops event notifications
 Operator: Manually switches dashboard back to normal mode
 Dashboard: Returns to normal status, clears incident markers
 ```
+
+### Slash Commands Summary
+
+The AI assistant chatbot supports slash commands for quick access to common operations. Type `/` to see available commands with autocomplete suggestions.
+
+**Available Commands:**
+
+| Command                       | Description                                                         | Usage                                        |
+| ----------------------------- | ------------------------------------------------------------------- | -------------------------------------------- |
+| `/check-network-status`       | Connected Network Type and Device Reachability Status               | `/check-network-status`                      |
+| `/subscribe-network-change`   | Create network type change subscription                             | `/subscribe-network-change`                  |
+| `/preflight-check`            | Device integrity check (SIM Swap, Device Swap, Number Verification) | `/preflight-check`                           |
+| `/qos`                        | Get all available QoS profiles                                      | `/qos`                                       |
+| `/report`                     | Report bushfire at a specific address                               | `/report 123 Street Name, City`              |
+| `/subscribe-geofence`         | Create geofencing subscription                                      | `/subscribe-geofence 200` (radius in meters) |
+| `/verify-location`            | Verify drone arrival at bushfire scene                              | `/verify-location`                           |
+| `/edge-discovery`             | Find closest edge computing node                                    | `/edge-discovery`                            |
+| `/deploy-edge-application`    | Deploy fire spread prediction model                                 | `/deploy-edge-application`                   |
+| `/accept-webrtc-call`         | Accept drone's incoming WebRTC call                                 | `/accept-webrtc-call`                        |
+| `/create-qod`                 | Create Quality on Demand session                                    | `/create-qod QOS_M`                          |
+| `/terminate-webrtc-call`      | Terminate ongoing WebRTC call                                       | `/terminate-webrtc-call`                     |
+| `/undeploy-edge-application`  | Undeploy fire spread prediction model                               | `/undeploy-edge-application`                 |
+| `/unsubscribe-geofence`       | Remove geofencing subscription                                      | `/unsubscribe-geofence`                      |
+| `/unsubscribe-network-change` | Cancel network type subscription                                    | `/unsubscribe-network-change`                |
+| `/mission-complete`           | Complete current mission and reset dashboard                        | `/mission-complete`                          |
+
+**Features:**
+
+- Autocomplete suggestions appear as you type
+- Commands are converted to natural language prompts
+- Supports parameters for commands like `/report` and `/subscribe-geofence`
 
 ## 🗃️ Process Flow Diagram
 
