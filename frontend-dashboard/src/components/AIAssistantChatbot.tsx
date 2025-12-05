@@ -93,10 +93,11 @@ const AIAssistantChatbot = ({
   );
 
   const [inputValue, setInputValue] = useState('');
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [suggestionIndex, setSuggestionIndex] = useState(-1);
+  const [showCommandSuggestions, setShowCommandSuggestions] = useState(false);
+  const [selectedCommandIndex, setSelectedCommandIndex] = useState(-1);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const commandSuggestionRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Auto-resize textarea based on content
   useEffect(() => {
@@ -109,14 +110,24 @@ const AIAssistantChatbot = ({
     }
   }, [inputValue]);
 
+  // Scroll highlighted command suggestion into view
+  useEffect(() => {
+    if (selectedCommandIndex >= 0 && commandSuggestionRefs.current[selectedCommandIndex]) {
+      commandSuggestionRefs.current[selectedCommandIndex]?.scrollIntoView({
+        block: 'nearest',
+        behavior: 'smooth',
+      });
+    }
+  }, [selectedCommandIndex]);
+
   // Handle input change with suggestions
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setInputValue(value);
 
-    // Show suggestions only if the input starts with '/' and we haven't finished typing the command
+    // Show command suggestions only if the input starts with '/' and we haven't finished typing the command
     // Don't show suggestions if there are parameters after the command (indicated by a space)
-    let showSuggestions = false;
+    let shouldShowSuggestions = false;
     if (value.startsWith('/')) {
       // Check if the value contains a space after the command part
       // If there's no space after the '/', show suggestions (still typing command)
@@ -129,11 +140,11 @@ const AIAssistantChatbot = ({
         // Check if there are any commands that start with the current input
         const availableCommands =
           getAvailableSlashCommands(commandWithoutSlash);
-        showSuggestions = availableCommands.length > 0;
+        shouldShowSuggestions = availableCommands.length > 0;
       }
     }
 
-    setShowSuggestions(showSuggestions);
+    setShowCommandSuggestions(shouldShowSuggestions);
   };
 
   // Helper to generate unique key for tool call
@@ -624,34 +635,34 @@ const AIAssistantChatbot = ({
     const filterText = inputValue.startsWith('/')
       ? inputValue.substring(1)
       : '';
-    const commands = showSuggestions
+    const commands = showCommandSuggestions
       ? getAvailableSlashCommands(filterText)
       : [];
 
     if (e.key === 'Enter' && !e.shiftKey) {
-      if (showSuggestions && suggestionIndex >= 0 && commands.length > 0) {
+      if (showCommandSuggestions && selectedCommandIndex >= 0 && commands.length > 0) {
         // Use the currently highlighted suggestion instead of sending
         e.preventDefault();
-        const selected = commands[suggestionIndex];
+        const selected = commands[selectedCommandIndex];
         if (selected) {
           setInputValue(`/${selected.name} `);
-          setShowSuggestions(false);
-          setSuggestionIndex(-1);
+          setShowCommandSuggestions(false);
+          setSelectedCommandIndex(-1);
         }
       } else {
         e.preventDefault();
         handleSend();
       }
-    } else if (e.key === 'ArrowDown' && showSuggestions) {
+    } else if (e.key === 'ArrowDown' && showCommandSuggestions) {
       e.preventDefault();
-      setSuggestionIndex((prev) => (prev < commands.length - 1 ? prev + 1 : 0));
-    } else if (e.key === 'ArrowUp' && showSuggestions) {
+      setSelectedCommandIndex((prev) => (prev < commands.length - 1 ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp' && showCommandSuggestions) {
       e.preventDefault();
-      setSuggestionIndex((prev) => (prev > 0 ? prev - 1 : commands.length - 1));
-    } else if (e.key === 'Escape' && showSuggestions) {
+      setSelectedCommandIndex((prev) => (prev > 0 ? prev - 1 : commands.length - 1));
+    } else if (e.key === 'Escape' && showCommandSuggestions) {
       e.preventDefault();
-      setShowSuggestions(false);
-      setSuggestionIndex(-1);
+      setShowCommandSuggestions(false);
+      setSelectedCommandIndex(-1);
     }
   };
 
@@ -1003,7 +1014,7 @@ const AIAssistantChatbot = ({
             />
 
             {/* Slash command suggestions */}
-            {showSuggestions && (
+            {showCommandSuggestions && (
               <div className='absolute bottom-full mb-2 left-0 right-0 bg-background border border-gray-700 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto'>
                 {(() => {
                   // Extract the filter text from the input (text after the '/')
@@ -1011,17 +1022,24 @@ const AIAssistantChatbot = ({
                     ? inputValue.substring(1)
                     : '';
                   const commands = getAvailableSlashCommands(filterText);
+                  // Reset refs array length to match commands
+                  commandSuggestionRefs.current = commands.map(
+                    (_, i) => commandSuggestionRefs.current[i] || null
+                  );
 
                   return commands.map((cmd, index) => (
                     <div
                       key={cmd.name}
+                      ref={(el) => {
+                        commandSuggestionRefs.current[index] = el;
+                      }}
                       className={`p-3 cursor-pointer hover:bg-gray-700 ${
-                        index === suggestionIndex ? 'bg-gray-700' : ''
+                        index === selectedCommandIndex ? 'bg-gray-700' : ''
                       }`}
                       onClick={() => {
                         setInputValue(`/${cmd.name} `);
-                        setShowSuggestions(false);
-                        setSuggestionIndex(-1);
+                        setShowCommandSuggestions(false);
+                        setSelectedCommandIndex(-1);
                         textareaRef.current?.focus();
                       }}
                     >
