@@ -1,9 +1,7 @@
 from typing import List, Dict, Any, AsyncIterator
 from app.services.llm_service import LLMService
 from app.services.mcp_client import mcp_client
-from app.config import settings
 import json
-import sys
 
 
 class AIAgent:
@@ -187,6 +185,7 @@ User: "Conduct preflight integrity check" or "Check device integrity for drone k
             assistant_message = {"role": "assistant", "content": ""}
             tool_calls = []
             current_tool_call = None
+            current_tool_call_index = None
 
             # Process streaming response
             async for chunk in stream:
@@ -225,15 +224,14 @@ User: "Conduct preflight integrity check" or "Check device integrity for drone k
                         # Initialize or update tool call
                         if (
                             current_tool_call is None
-                            or tc_index != current_tool_call.get("index")
+                            or tc_index != current_tool_call_index
                         ):
                             # Save previous tool call if exists
                             if current_tool_call is not None:
                                 tool_calls.append(current_tool_call)
 
-                            # Create new tool call
+                            current_tool_call_index = tc_index
                             current_tool_call = {
-                                "index": tc_index,
                                 "id": tool_call_delta.id or "",
                                 "type": "function",
                                 "function": {"name": "", "arguments": ""},
@@ -398,7 +396,6 @@ User: "Conduct preflight integrity check" or "Check device integrity for drone k
                                 {
                                     "role": "tool",
                                     "tool_call_id": tool_call["id"],
-                                    "name": tool_name,
                                     "content": tool_result_content,
                                 }
                             )
@@ -415,7 +412,6 @@ User: "Conduct preflight integrity check" or "Check device integrity for drone k
                                 {
                                     "role": "tool",
                                     "tool_call_id": tool_call["id"],
-                                    "name": tool_name,
                                     "content": error_content,
                                 }
                             )
@@ -441,7 +437,6 @@ User: "Conduct preflight integrity check" or "Check device integrity for drone k
                             {
                                 "role": "tool",
                                 "tool_call_id": tool_call["id"],
-                                "name": tool_name,
                                 "content": error_content,
                             }
                         )
