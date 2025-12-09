@@ -33,10 +33,9 @@ The server will start at `http://localhost:4000`
 cd backend-api
 uv sync  # Install all dependencies from pyproject.toml
 
-# Set your Gemini API key
-export GEMINI_API_KEY="your-api-key-here"
-# Or create a .env file
-echo "GEMINI_API_KEY=your-api-key-here" > .env
+# Set your Gemini API key at config.py
+LLM_API_KEY = "your_google_gemini_api_key_here"
+# Update other config settings as needed
 ```
 
 ## 📡 API Endpoints
