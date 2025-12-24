@@ -1,9 +1,7 @@
 from typing import List, Dict, Any, AsyncIterator
 from app.services.llm_service import LLMService
 from app.services.mcp_client import mcp_client
-from app.config import settings
 import json
-import sys
 
 
 class AIAgent:
@@ -179,96 +177,78 @@ User: "Conduct preflight integrity check" or "Check device integrity for drone k
             iteration += 1
             continue_processing = False
 
-            # Get LLM response with tools (don't await - it's an async generator)
+            # Get LLM response with tools
             stream = self.llm.chat_completion_stream(
                 messages=self.conversations[conversation_id], tools=mcp_tools
             )
 
-            assistant_message = {"role": "assistant", "content": ""}
+            # Track assistant message being built
+            assistant_content = ""
             tool_calls = []
-            current_tool_call = None
+            current_tool_use = None
+            current_tool_input = ""
+            stop_reason = None
 
-            # Process streaming response
-            async for chunk in stream:
-                # Check if chunk has choices
-                if (
-                    not hasattr(chunk, "choices")
-                    or chunk.choices is None
-                    or len(chunk.choices) == 0
-                ):
-                    continue
+            # Process Bedrock streaming events
+            async for event in stream:
+                # Handle different Bedrock event types
 
-                # Check if choice has delta
-                choice = chunk.choices[0]
-                if not hasattr(choice, "delta") or choice.delta is None:
-                    continue
-
-                delta = choice.delta
-
-                # Handle text content
-                if hasattr(delta, "content") and delta.content:
-                    content = delta.content
-                    assistant_message["content"] += content
-                    print(f"📝 LLM content: {content}", flush=True)
-                    yield {"type": "content", "data": content}
-
-                # Handle tool calls
-                if hasattr(delta, "tool_calls") and delta.tool_calls:
-                    for tool_call_delta in delta.tool_calls:
-                        # Get the index, default to 0 if None
-                        tc_index = (
-                            tool_call_delta.index
-                            if tool_call_delta.index is not None
-                            else 0
-                        )
-
-                        # Initialize or update tool call
-                        if (
-                            current_tool_call is None
-                            or tc_index != current_tool_call.get("index")
-                        ):
-                            # Save previous tool call if exists
-                            if current_tool_call is not None:
-                                tool_calls.append(current_tool_call)
-
-                            # Create new tool call
-                            current_tool_call = {
-                                "index": tc_index,
-                                "id": tool_call_delta.id or "",
-                                "type": "function",
-                                "function": {"name": "", "arguments": ""},
+                if "contentBlockStart" in event:
+                    block_start = event["contentBlockStart"]
+                    if "start" in block_start:
+                        start = block_start["start"]
+                        if "toolUse" in start:
+                            # Starting a new tool use block
+                            current_tool_use = {
+                                "id": start["toolUse"]["toolUseId"],
+                                "name": start["toolUse"]["name"],
                             }
+                            current_tool_input = ""
 
-                        # Update function name
-                        if (
-                            tool_call_delta.function
-                            and tool_call_delta.function.name is not None
-                        ):
-                            current_tool_call["function"]["name"] = (
-                                tool_call_delta.function.name
-                            )
+                elif "contentBlockDelta" in event:
+                    delta = event["contentBlockDelta"]["delta"]
 
-                        # Accumulate arguments
-                        if (
-                            tool_call_delta.function
-                            and tool_call_delta.function.arguments is not None
-                        ):
-                            current_tool_call["function"]["arguments"] += (
-                                tool_call_delta.function.arguments
-                            )
+                    if "text" in delta:
+                        # Text content
+                        text = delta["text"]
+                        assistant_content += text
+                        print(f"📝 LLM content: {text}", flush=True)
+                        yield {"type": "content", "data": text}
 
-            # Add final tool call if exists
-            if current_tool_call:
-                tool_calls.append(current_tool_call)
+                    elif "toolUse" in delta:
+                        # Tool input being streamed
+                        if "input" in delta["toolUse"]:
+                            current_tool_input += delta["toolUse"]["input"]
 
-            # Save assistant message
+                elif "contentBlockStop" in event:
+                    # Content block finished
+                    if current_tool_use is not None:
+                        # Finalize the tool call
+                        tool_calls.append(
+                            {
+                                "id": current_tool_use["id"],
+                                "type": "function",
+                                "function": {
+                                    "name": current_tool_use["name"],
+                                    "arguments": current_tool_input,
+                                },
+                            }
+                        )
+                        current_tool_use = None
+                        current_tool_input = ""
+
+                elif "messageStop" in event:
+                    stop_reason = event["messageStop"].get("stopReason")
+
+            # Build assistant message for conversation history
+            assistant_message = {"role": "assistant", "content": assistant_content}
             if tool_calls:
                 assistant_message["tool_calls"] = tool_calls
 
             self.conversations[conversation_id].append(assistant_message)
 
-            # Execute tool calls if present
-            if tool_calls:
+            # Execute tool calls if present (stop_reason == 'tool_use')
+            if tool_calls and stop_reason == "tool_use":
                 continue_processing = True
 
                 for tool_call in tool_calls:
@@ -277,12 +257,11 @@ User: "Conduct preflight integrity check" or "Check device integrity for drone k
 
                     try:
                         # Try to parse the JSON arguments
-                        tool_args = json.loads(tool_args_str)
+                        tool_args = json.loads(tool_args_str) if tool_args_str else {}
                     except json.JSONDecodeError as json_err:
-                        # If there's a duplication issue (e.g., '{"a":1}{"a":1}'), extract first valid JSON
+                        # If there's a duplication issue, extract first valid JSON
                         if "Extra data" in str(json_err):
                             try:
-                                # Find where the first JSON object ends
                                 decoder = json.JSONDecoder()
                                 first_obj, idx = decoder.raw_decode(tool_args_str)
                                 tool_args = first_obj
@@ -290,7 +269,6 @@ User: "Conduct preflight integrity check" or "Check device integrity for drone k
                                     f"⚠️  Warning: Extracted first JSON object from duplicated arguments: {tool_args}"
                                 )
                             except Exception:
-                                # If extraction fails, try the old method
                                 json_end = (
                                     json_err.pos
                                     if hasattr(json_err, "pos")
@@ -302,7 +280,6 @@ User: "Conduct preflight integrity check" or "Check device integrity for drone k
                                 except json.JSONDecodeError:
                                     raise json_err
                         else:
-                            # For other JSON errors, raise immediately
                             raise json_err
 
                     try:
@@ -311,19 +288,16 @@ User: "Conduct preflight integrity check" or "Check device integrity for drone k
                             "unsubscribe_geofencing",
                             "unsubscribe_connected_network",
                         ]:
-                            # Determine subscription type
                             sub_type = (
                                 "geofencing"
                                 if tool_name == "unsubscribe_geofencing"
                                 else "connected_network"
                             )
 
-                            # If no subscription_id provided, try to find it
                             if (
                                 "subscription_id" not in tool_args
                                 or not tool_args["subscription_id"]
                             ):
-                                # Try to infer device_id (default to drone-001)
                                 device_id = tool_args.get("device_id", "drone-001")
                                 tracked_sub_id = self._get_subscription_id(
                                     conversation_id, device_id, sub_type
@@ -387,10 +361,7 @@ User: "Conduct preflight integrity check" or "Check device integrity for drone k
 
                         # Validate and sanitize tool result before adding to conversation
                         try:
-                            # Ensure result is JSON serializable
                             tool_result_content = json.dumps(result)
-
-                            # Verify it can be parsed back (double-check validity)
                             json.loads(tool_result_content)
 
                             # Add tool result to conversation
@@ -403,7 +374,6 @@ User: "Conduct preflight integrity check" or "Check device integrity for drone k
                                 }
                             )
                         except (TypeError, json.JSONDecodeError) as validation_err:
-                            # If result is not JSON serializable or invalid, add a safe error message
                             error_content = json.dumps(
                                 {
                                     "error": f"Tool result validation failed: {str(validation_err)}",
@@ -423,8 +393,6 @@ User: "Conduct preflight integrity check" or "Check device integrity for drone k
                     except Exception as e:
                         error_msg = f"Error executing tool {tool_name}: {str(e)}"
 
-                        # Create a safe, validated error message
-                        # Truncate error message if too long to prevent LLM API issues
                         safe_error_msg = (
                             error_msg[:500] if len(error_msg) > 500 else error_msg
                         )
@@ -436,7 +404,6 @@ User: "Conduct preflight integrity check" or "Check device integrity for drone k
                             }
                         )
 
-                        # Add error to conversation
                         self.conversations[conversation_id].append(
                             {
                                 "role": "tool",
@@ -451,7 +418,6 @@ User: "Conduct preflight integrity check" or "Check device integrity for drone k
                             "data": {"tool": tool_name, "error": str(e)},
                         }
 
-                        # For JSON parsing errors, stop processing to prevent cascading failures
                         if isinstance(e, json.JSONDecodeError):
                             continue_processing = False
                             break

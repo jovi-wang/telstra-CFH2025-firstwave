@@ -118,26 +118,25 @@ class MCPClient:
 
     def get_tools_for_llm(self) -> List[Dict[str, Any]]:
         """
-        Convert MCP tools to OpenAI function calling format
+        Convert MCP tools to AWS Bedrock Converse tool format
 
         Returns:
-            List of tool definitions in OpenAI format
+            List of tool definitions in Bedrock format
         """
-        llm_tools = []
+        bedrock_tools = []
 
         for tool in self.available_tools:
-            llm_tools.append(
+            bedrock_tools.append(
                 {
-                    "type": "function",
-                    "function": {
+                    "toolSpec": {
                         "name": tool.name,
                         "description": tool.description,
-                        "parameters": tool.inputSchema,
-                    },
+                        "inputSchema": {"json": tool.inputSchema},
+                    }
                 }
             )
 
-        return llm_tools
+        return bedrock_tools
 
     def get_tool_names(self) -> List[str]:
         """Get list of available tool names"""
