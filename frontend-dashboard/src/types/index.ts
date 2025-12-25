@@ -54,31 +54,33 @@ export interface QoSProfile {
 }
 
 // Edge analysis types
-export interface HeatSignature {
+export interface DamageHotspot {
   id: string;
   location: Location;
-  intensity: 'low' | 'medium' | 'high' | 'extreme';
+  type: 'downed_line' | 'damaged_pole' | 'transformer_damage' | 'vegetation' | 'unknown';
+  severity: 'minor' | 'moderate' | 'severe' | 'critical';
   confidence: number; // 0-1
   timestamp: string;
 }
 
-export interface FireSpreadPrediction {
-  direction: string; // e.g., 'northeast'
-  speedKmh: number;
-  predictedAreaKm2: number;
-  riskLevel: 'low' | 'medium' | 'high' | 'extreme';
+export interface DamageSeverityAssessment {
+  affectedDirection: string; // e.g., 'northeast'
+  spreadRateKmh: number; // How fast outage is spreading
+  affectedAreaKm2: number;
+  severityLevel: 'minor' | 'moderate' | 'severe' | 'critical';
+  estimatedRepairTimeHours: number;
 }
 
 export interface EdgeAnalysisResults {
-  heatSignatures: HeatSignature[];
-  fireSpreadPrediction: FireSpreadPrediction;
-  smokeCoveragePercent: number;
-  personsDetected: number;
+  damageHotspots: DamageHotspot[];
+  damageSeverityAssessment: DamageSeverityAssessment;
+  affectedAreaPercent: number;
+  customersAffected: number;
   statistics: {
-    totalHeatSignatures: number;
-    smokeCoveragePercent: number;
-    fireIntensity: 'low' | 'medium' | 'high' | 'extreme';
-    personsDetected: number;
+    totalDamageHotspots: number;
+    affectedAreaPercent: number;
+    damageSeverity: 'minor' | 'moderate' | 'severe' | 'critical';
+    customersAffected: number;
   };
 }
 
@@ -94,7 +96,7 @@ export interface MissionState {
 
 export interface Alert {
   id: string;
-  type: 'geofence' | 'battery' | 'connection' | 'fire';
+  type: 'geofence' | 'battery' | 'connection' | 'outage';
   severity: 'info' | 'warning' | 'critical';
   message: string;
   timestamp: string;

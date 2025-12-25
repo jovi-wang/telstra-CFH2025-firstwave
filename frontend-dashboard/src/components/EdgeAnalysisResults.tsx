@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Flame, TrendingUp, Server, Package } from 'lucide-react';
+import { Zap, TrendingUp, Server, Package, AlertTriangle } from 'lucide-react';
 import { staticEdgeAnalysis } from '../utils/staticData';
 import {
   useSystemStatusStore,
@@ -15,46 +15,46 @@ const EdgeAnalysisResults = ({
   edgeNodeLocation,
   edgeDeployment,
 }: EdgeAnalysisResultsProps) => {
-  const { heatSignatures, fireSpreadPrediction, statistics } =
+  const { damageHotspots, damageSeverityAssessment, statistics } =
     staticEdgeAnalysis;
 
   // Get edge processing state from systemStatusStore
   const edgeProcessing = useSystemStatusStore((state) => state.edgeProcessing);
 
-  const getIntensityColor = (intensity: string) => {
-    switch (intensity) {
-      case 'extreme':
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'critical':
         return 'text-danger';
-      case 'high':
+      case 'severe':
         return 'text-warning';
-      case 'medium':
+      case 'moderate':
         return 'text-yellow-400';
-      case 'low':
-        return 'text-gray-400';
-      default:
-        return 'text-gray-400';
-    }
-  };
-
-  const getRiskBadgeColor = (risk: string) => {
-    switch (risk) {
-      case 'extreme':
-        return 'text-danger';
-      case 'high':
-        return 'text-warning';
-      case 'medium':
-        return 'text-yellow-400';
-      case 'low':
+      case 'minor':
         return 'text-success';
       default:
         return 'text-gray-400';
     }
   };
 
+  const getDamageTypeLabel = (type: string) => {
+    switch (type) {
+      case 'downed_line':
+        return 'Downed Line';
+      case 'damaged_pole':
+        return 'Damaged Pole';
+      case 'transformer_damage':
+        return 'Transformer Damage';
+      case 'vegetation':
+        return 'Vegetation Contact';
+      default:
+        return 'Unknown';
+    }
+  };
+
   return (
     <div className='p-4 h-full overflow-y-auto'>
       <h2 className='text-lg font-semibold mb-4 flex items-center space-x-2'>
-        <Flame className='w-5 h-5 text-warning' />
+        <Zap className='w-5 h-5 text-warning' />
         <span>Edge Node Analysis</span>
       </h2>
 
@@ -122,82 +122,100 @@ const EdgeAnalysisResults = ({
         </div>
       )}
 
-      {/* Fire Spread Prediction - Only show when edge processing is active */}
+      {/* Damage Severity Assessment */}
       {edgeDeployment && edgeProcessing && (
         <div className='mb-6 bg-background p-4 rounded-lg border border-warning'>
           <h3 className='text-sm font-semibold mb-3 flex items-center space-x-2'>
             <TrendingUp className='w-4 h-4 text-warning' />
-            <span>Fire Spread Prediction</span>
+            <span>Damage Severity Assessment</span>
           </h3>
 
           <div className='grid grid-cols-2 gap-3'>
             <div>
-              <div className='text-xs text-gray-400 mb-1'>Direction</div>
-              <div className='font-bold text-warning uppercase'>
-                {fireSpreadPrediction.direction}
-              </div>
-            </div>
-
-            <div>
-              <div className='text-xs text-gray-400 mb-1'>Speed</div>
-              <div className='font-bold'>
-                {fireSpreadPrediction.speedKmh} km/h
-              </div>
-            </div>
-
-            <div>
               <div className='text-xs text-gray-400 mb-1'>
-                Predicted Area (30 min)
+                Affected Direction
               </div>
-              <div className='font-bold'>
-                {fireSpreadPrediction.predictedAreaKm2} km²
+              <div className='font-bold text-warning uppercase'>
+                {damageSeverityAssessment.affectedDirection}
               </div>
             </div>
 
             <div>
-              <div className='text-xs text-gray-400 mb-1'>Risk Level</div>
+              <div className='text-xs text-gray-400 mb-1'>Spread Rate</div>
+              <div className='font-bold'>
+                {damageSeverityAssessment.spreadRateKmh} km/h
+              </div>
+            </div>
+
+            <div>
+              <div className='text-xs text-gray-400 mb-1'>Affected Area</div>
+              <div className='font-bold'>
+                {damageSeverityAssessment.affectedAreaKm2} km²
+              </div>
+            </div>
+
+            <div>
+              <div className='text-xs text-gray-400 mb-1'>Severity Level</div>
               <span
-                className={`text-xs font-semibold ${getRiskBadgeColor(
-                  fireSpreadPrediction.riskLevel
+                className={`text-xs font-semibold ${getSeverityColor(
+                  damageSeverityAssessment.severityLevel
                 )}`}
               >
-                {fireSpreadPrediction.riskLevel.toUpperCase()}
+                {damageSeverityAssessment.severityLevel.toUpperCase()}
               </span>
+            </div>
+
+            <div className='col-span-2'>
+              <div className='text-xs text-gray-400 mb-1'>Est. Repair Time</div>
+              <div className='font-bold text-primary'>
+                {damageSeverityAssessment.estimatedRepairTimeHours} hours
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Heat Signatures */}
-      {edgeDeployment && (
+      {/* Damage Hotspots */}
+      {edgeDeployment && edgeProcessing && (
         <div className='mb-6'>
           <h3 className='text-sm font-semibold mb-3 flex items-center justify-between'>
-            <span>Heat Signatures Detected ({heatSignatures.length})</span>
+            <span>Damage Hotspots Detected ({damageHotspots.length})</span>
             <span className='text-xs text-gray-400'>Latest 3 shown</span>
           </h3>
 
           <div className='space-y-2'>
-            {heatSignatures.map((signature) => (
+            {damageHotspots.map((hotspot) => (
               <div
-                key={signature.id}
+                key={hotspot.id}
                 className='bg-background p-3 rounded hover:bg-opacity-80 cursor-pointer transition-colors'
               >
                 <div className='flex items-center justify-between mb-2'>
-                  <span
-                    className={`font-semibold text-sm ${getIntensityColor(
-                      signature.intensity
-                    )}`}
-                  >
-                    {signature.intensity.toUpperCase()} Intensity
-                  </span>
+                  <div className='flex items-center space-x-2'>
+                    <AlertTriangle
+                      className={`w-4 h-4 ${getSeverityColor(
+                        hotspot.severity
+                      )}`}
+                    />
+                    <span
+                      className={`font-semibold text-sm ${getSeverityColor(
+                        hotspot.severity
+                      )}`}
+                    >
+                      {hotspot.severity.toUpperCase()}
+                    </span>
+                  </div>
                   <span className='text-xs text-gray-500'>
-                    Confidence: {(signature.confidence * 100).toFixed(0)}%
+                    {(hotspot.confidence * 100).toFixed(0)}%
                   </span>
                 </div>
 
+                <div className='text-xs text-primary mb-1'>
+                  {getDamageTypeLabel(hotspot.type)}
+                </div>
+
                 <div className='text-xs text-gray-400 font-mono'>
-                  {signature.location.lat.toFixed(4)},{' '}
-                  {signature.location.lon.toFixed(4)}
+                  {hotspot.location.lat.toFixed(4)},{' '}
+                  {hotspot.location.lon.toFixed(4)}
                 </div>
               </div>
             ))}
@@ -206,46 +224,46 @@ const EdgeAnalysisResults = ({
       )}
 
       {/* Statistics */}
-      {edgeDeployment && (
+      {edgeDeployment && edgeProcessing && (
         <div className='bg-background p-4 rounded-lg'>
           <h3 className='text-sm font-semibold mb-3'>Analysis Statistics</h3>
 
           <div className='grid grid-cols-2 gap-3 text-sm'>
             <div className='flex items-center justify-between'>
-              <span className='text-gray-400'>Total Heat Signatures:</span>
+              <span className='text-gray-400'>Total Damage Hotspots:</span>
               <span className='font-bold'>
-                {statistics.totalHeatSignatures}
+                {statistics.totalDamageHotspots}
               </span>
             </div>
 
             <div className='flex items-center justify-between'>
-              <span className='text-gray-400'>Smoke Coverage:</span>
+              <span className='text-gray-400'>Affected Area:</span>
               <span className='font-bold'>
-                {statistics.smokeCoveragePercent}%
+                {statistics.affectedAreaPercent}%
               </span>
             </div>
 
             <div className='flex items-center justify-between'>
-              <span className='text-gray-400'>Fire Intensity:</span>
+              <span className='text-gray-400'>Damage Severity:</span>
               <span
-                className={`font-bold ${getIntensityColor(
-                  statistics.fireIntensity
+                className={`font-bold ${getSeverityColor(
+                  statistics.damageSeverity
                 )}`}
               >
-                {statistics.fireIntensity.toUpperCase()}
+                {statistics.damageSeverity.toUpperCase()}
               </span>
             </div>
 
             <div className='flex items-center justify-between'>
-              <span className='text-gray-400'>Persons Detected:</span>
+              <span className='text-gray-400'>Customers Affected:</span>
               <span
                 className={`font-bold ${
-                  statistics.personsDetected > 0
+                  statistics.customersAffected > 0
                     ? 'text-danger'
                     : 'text-success'
                 }`}
               >
-                {statistics.personsDetected}
+                {statistics.customersAffected.toLocaleString()}
               </span>
             </div>
           </div>

@@ -21,6 +21,7 @@ import { useSystemStatusStore } from '../store/systemStatusStore';
 import type { Subscription } from '../store/subscriptionsStore';
 import {
   isSlashCommand,
+  isInvalidSlashCommand,
   executeSlashCommand,
   getAvailableSlashCommands,
 } from '../utils/slashCommands';
@@ -609,7 +610,27 @@ const AIAssistantChatbot = ({
   const handleSend = async () => {
     if (!inputValue.trim() || isTyping) return;
 
-    // Check if this is a slash command
+    // Always dismiss suggestions when sending
+    setShowCommandSuggestions(false);
+    setSelectedCommandIndex(-1);
+
+    // Check if this looks like a slash command but is invalid
+    if (isInvalidSlashCommand(inputValue)) {
+      // Extract the attempted command name
+      const attemptedCommand = inputValue.trim().split(' ')[0];
+
+      // Show error message to user
+      const errorMessage: ChatMessage = {
+        role: 'assistant',
+        content: `Unknown command: \`${attemptedCommand}\`\n\nType \`/\` to see available commands.`,
+        timestamp: new Date().toISOString(),
+      };
+      addMessage(errorMessage);
+      setInputValue('');
+      return;
+    }
+
+    // Check if this is a valid slash command
     if (isSlashCommand(inputValue)) {
       const message = executeSlashCommand(inputValue);
       // Create user message showing the command
@@ -650,7 +671,10 @@ const AIAssistantChatbot = ({
           setSelectedCommandIndex(-1);
         }
       } else {
+        // Dismiss suggestions before sending
         e.preventDefault();
+        setShowCommandSuggestions(false);
+        setSelectedCommandIndex(-1);
         handleSend();
       }
     } else if (e.key === 'ArrowDown' && showCommandSuggestions) {

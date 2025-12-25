@@ -78,58 +78,62 @@ export const staticQoSProfiles: QoSProfile[] = [
 
 // Static edge node analysis results
 export const staticEdgeAnalysis: EdgeAnalysisResults = {
-  heatSignatures: [
+  damageHotspots: [
     {
-      id: 'hs-001',
+      id: 'dh-001',
       location: { lat: -37.8136, lon: 144.9631 },
-      intensity: 'high',
+      type: 'downed_line',
+      severity: 'severe',
       confidence: 0.92,
       timestamp: new Date().toISOString(),
     },
     {
-      id: 'hs-002',
+      id: 'dh-002',
       location: { lat: -37.814, lon: 144.9635 },
-      intensity: 'medium',
+      type: 'damaged_pole',
+      severity: 'moderate',
       confidence: 0.85,
       timestamp: new Date().toISOString(),
     },
     {
-      id: 'hs-003',
+      id: 'dh-003',
       location: { lat: -37.8145, lon: 144.964 },
-      intensity: 'extreme',
+      type: 'transformer_damage',
+      severity: 'critical',
       confidence: 0.95,
       timestamp: new Date().toISOString(),
     },
   ],
-  fireSpreadPrediction: {
-    direction: 'northeast',
-    speedKmh: 12,
-    predictedAreaKm2: 2.5,
-    riskLevel: 'high',
+  damageSeverityAssessment: {
+    affectedDirection: 'northeast',
+    spreadRateKmh: 2,
+    affectedAreaKm2: 2.5,
+    severityLevel: 'severe',
+    estimatedRepairTimeHours: 4,
   },
-  smokeCoveragePercent: 45,
-  personsDetected: 0,
+  affectedAreaPercent: 45,
+  customersAffected: 2500,
   statistics: {
-    totalHeatSignatures: 15,
-    smokeCoveragePercent: 45,
-    fireIntensity: 'high',
-    personsDetected: 0,
+    totalDamageHotspots: 15,
+    affectedAreaPercent: 45,
+    damageSeverity: 'severe',
+    customersAffected: 2500,
   },
 };
 
 // Static mission state
 export const staticMissionState: MissionState = {
   incidentId: 'INC-2025-001',
-  incidentType: 'Bushfire',
+  incidentType: 'Power Outage',
   location: INCIDENT_LOCATION,
   startTime: new Date(Date.now() - 900000).toISOString(), // Started 15 minutes ago
   missionStatus: 'active',
   alerts: [
     {
       id: 'alert-001',
-      type: 'fire',
+      type: 'outage',
       severity: 'critical',
-      message: 'New heat signature detected at -37.8145, 144.9640',
+      message: 'New damage hotspot detected at -37.8145, 144.9640',
       timestamp: new Date(Date.now() - 120000).toISOString(),
     },
   ],

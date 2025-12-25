@@ -1,21 +1,21 @@
-# Disaster Response Drone System
+# Power Outage Response Drone System
 
-A comprehensive bushfire response system using drones and CAMARA network APIs for real-time disaster monitoring and response coordination.
+A comprehensive power outage response system using drones and CAMARA network APIs for real-time infrastructure inspection and outage response coordination.
 
 Developed for [Telstra's Connected Future Hackathon 2025](https://telstra.brightidea.com/CFH2025). See [Rubrics](./Rubrics.md) for elevator pitch and details about how this project addresses the hackathon criteria (including CAMARA's API usage)
 
 ## 🌟 Executive Summary
 
-This system demonstrates an innovative disaster response solution combining drone operations with 15 CAMARA network APIs. The typical workflow involves:
+This system demonstrates an innovative power outage response solution combining drone operations with 15 CAMARA network APIs for electricity companies. The typical workflow involves:
 
 0. **Preflight Check**: Conduct device integrity check (Number Verify, SIM Swap Detection, Device Swap Detection) before mission
-1. **Incident Reporting**: Operator reports bushfire location (street address) in chatbot interface
-2. **Geofencing Setup**: Creates geofencing subscription around disaster area with visual map marker
+1. **Incident Reporting**: Operator reports power outage location (street address) in chatbot interface
+2. **Geofencing Setup**: Creates geofencing subscription around outage area with visual map marker
 3. **Location Verification**: Confirms drone arrival at scene via location verification API
-4. **Edge Computing**: Discovers closest edge node and deploys AI model
-5. **Live Streaming**: Drone streams video via WebRTC call
+4. **Edge Computing**: Discovers closest edge node and deploys damage assessment AI model
+5. **Live Streaming**: Drone streams video via WebRTC call for infrastructure inspection
 6. **QoS Management**: Dynamically adjusts network quality (QoS profiles) based on network conditions
-7. **Real-time Monitoring**: Tracks drone location, network connectivity, and region device count with heatmap visualization
+7. **Real-time Monitoring**: Tracks drone location, network connectivity, and region device count (affected customers) with heatmap visualization
 8. **AI Assistance**: Natural language queries for system status and mission management
 9. **Slash Commands**: Quick actions via slash commands in chatbot interface
 
@@ -107,7 +107,7 @@ Dashboard runs at `http://localhost:5173`
 **Key Features**:
 
 - **Dual Mode Operation**: Normal mode (general ops) and Incident mode (active response)
-- **Interactive Map**: drone, bushfire, edge node location markers device count heatmap, geofencing circles
+- **Interactive Map**: drone, outage location, edge node location markers, device count heatmap (affected customers), geofencing circles
 - **AI Chatbot**: Natural language interface for CAMARA API operations
 - **Live Video Stream**: WebRTC video call streaming session
 - **Real-time Telemetry**: Altitude, speed, heading, battery, signal strength
@@ -177,10 +177,10 @@ AI Response: Creates subscription, returns subscription ID
 
 **Phase 1: Incident Reporting & Geofencing**
 
-**5. Report Bushfire Location**
+**5. Report Power Outage Location**
 
 ```
-Operator: "A bushfire is reported at 1234 Mount Dandenong Tourist Rd, Kalorama VIC 3766"
+Operator: "A power outage is reported at 123 Collins Street, Melbourne VIC 3000"
 AI Response: Geocodes address → returns lat/lon coordinates (-37.8136, 144.9631)
 Dashboard: Adds incident marker on map
 ```
@@ -198,7 +198,7 @@ Dashboard: Displays geofencing circle on map
 **7. Verify Drone Arrival**
 
 ```
-Operator: "Check if drone kit has arrived at the bushfire scene"
+Operator: "Check if drone kit has arrived at the outage location"
 AI Response: Verifies drone location within geofencing area
 Dashboard: Displays drone marker on map
 ```
@@ -206,7 +206,7 @@ Dashboard: Displays drone marker on map
 **8. Deploy Edge AI Model**
 
 ```
-Operator: "Find closest edge computing node location and then deploy the fire spread prediction image in that node (image id: fire-spread-prediction:v2.0)"
+Operator: "Find closest edge computing node location and then deploy the damage assessment image in that node (image id: damage-assessment:v2.0)"
 AI Response: Discovers edge node, deploys AI model
 Dashboard: Adds edge node marker on map, shows deployment status
 ```
@@ -261,7 +261,7 @@ Dashboard: Video stream stops
 **13. Undeploy Edge AI Model**
 
 ```
-Operator: "Undeploy fire-spread-prediction:v2.0 model from edge node"
+Operator: "Undeploy damage-assessment:v2.0 model from edge node"
 AI Response: Undeploys model from edge node
 Dashboard: Edge node status updates
 ```
@@ -294,15 +294,15 @@ The AI assistant chatbot supports slash commands for quick access to common oper
 | `/subscribe-network-change`   | Create network type change subscription                             | `/subscribe-network-change`                  |
 | `/preflight-check`            | Device integrity check (SIM Swap, Device Swap, Number Verification) | `/preflight-check`                           |
 | `/qos`                        | Get all available QoS profiles                                      | `/qos`                                       |
-| `/report`                     | Report bushfire at a specific address                               | `/report 123 Street Name, City`              |
+| `/report`                     | Report power outage at a specific address                           | `/report 123 Street Name, City`              |
 | `/subscribe-geofence`         | Create geofencing subscription                                      | `/subscribe-geofence 200` (radius in meters) |
-| `/verify-location`            | Verify drone arrival at bushfire scene                              | `/verify-location`                           |
+| `/verify-location`            | Verify drone arrival at outage location                             | `/verify-location`                           |
 | `/edge-discovery`             | Find closest edge computing node                                    | `/edge-discovery`                            |
-| `/deploy-edge-application`    | Deploy fire spread prediction model                                 | `/deploy-edge-application`                   |
+| `/deploy-edge-application`    | Deploy damage assessment model                                      | `/deploy-edge-application`                   |
 | `/accept-webrtc-call`         | Accept drone's incoming WebRTC call                                 | `/accept-webrtc-call`                        |
 | `/create-qod`                 | Create Quality on Demand session                                    | `/create-qod QOS_M`                          |
 | `/terminate-webrtc-call`      | Terminate ongoing WebRTC call                                       | `/terminate-webrtc-call`                     |
-| `/undeploy-edge-application`  | Undeploy fire spread prediction model                               | `/undeploy-edge-application`                 |
+| `/undeploy-edge-application`  | Undeploy damage assessment model                                    | `/undeploy-edge-application`                 |
 | `/unsubscribe-geofence`       | Remove geofencing subscription                                      | `/unsubscribe-geofence`                      |
 | `/unsubscribe-network-change` | Cancel network type subscription                                    | `/unsubscribe-network-change`                |
 | `/mission-complete`           | Complete current mission and reset dashboard                        | `/mission-complete`                          |
@@ -360,17 +360,17 @@ sequenceDiagram
     FE->>FE: Display integrity status in StatusPanel<br/>(Number Verified, No SIM Swap, No Device Swap)
 
     Note over User,Drone: Phase 0: Incident Initiation
-    User->>FE: Report incident via chatbot<br/>"Bushfire at [address]"
+    User->>FE: Report incident via chatbot<br/>"Power outage at [address]"
     FE->>BE: POST /api/chat/message
     BE->>BE: AI Agent processes user message
     BE->>MCP: geocode_address(address)
     MCP-->>BE: {lat, lon}
     BE-->>FE: SSE stream (incident location)
     FE->>FE: Add incident marker to map<br/>Switch to Emergency Mode
-    Note over User,Drone: Rescue teams & drone deployed
+    Note over User,Drone: Response teams & drone deployed
 
     Note over User,Drone: Phase 1: Edge Setup & Deployment
-    User->>FE: "Find closest edge node and deploy<br/>fire-spread-prediction:v2.0"
+    User->>FE: "Find closest edge node and deploy<br/>damage-assessment:v2.0"
     FE->>BE: POST /api/chat/message
     BE->>BE: AI Agent processes request
     BE->>MCP: discover_edge_node(lat, lon)

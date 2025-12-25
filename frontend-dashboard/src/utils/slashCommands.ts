@@ -42,9 +42,9 @@ const slashCommands: Record<string, SlashCommand> = {
   },
   report: {
     name: 'report',
-    description: 'Report a bushfire at a specific address',
+    description: 'Report a power outage at a specific address',
     handler: (param: string) => {
-      return `A bushfire is reported at ${param}`;
+      return `A power outage is reported at ${param}`;
     },
   },
   'subscribe-geofence': {
@@ -58,7 +58,7 @@ const slashCommands: Record<string, SlashCommand> = {
     name: 'verify-location',
     description: 'Location Verification',
     handler: () => {
-      return `Check if drone kit has arrived the bushfire scene`;
+      return `Check if drone kit has arrived at the outage location`;
     },
   },
   'edge-discovery': {
@@ -72,7 +72,7 @@ const slashCommands: Record<string, SlashCommand> = {
     name: 'deploy-edge-application',
     description: 'Edge Application Management',
     handler: () => {
-      return `deploy the fire spread prediction image in this edge computing node (image id: fire-spread-prediction:v2.0)`;
+      return `deploy the damage assessment image in this edge computing node (image id: damage-assessment:v2.0)`;
     },
   },
   'accept-webrtc-call': {
@@ -100,7 +100,7 @@ const slashCommands: Record<string, SlashCommand> = {
     name: 'undeploy-edge-application',
     description: 'Edge Application Management',
     handler: () => {
-      return `undeploy the fire spread prediction image`;
+      return `undeploy the damage assessment image`;
     },
   },
   'unsubscribe-geofence': {
@@ -177,5 +177,26 @@ export const isSlashCommand = (input: string): boolean => {
   const { command } = parsed;
 
   // Check if the command exists in our commands object
-  return command in slashCommands;
+  return command.toLowerCase() in slashCommands;
+};
+
+/**
+ * Check if input looks like a slash command attempt (starts with /)
+ * but is not a valid command
+ */
+export const isInvalidSlashCommand = (input: string): boolean => {
+  if (!input.trim().startsWith('/')) return false;
+
+  const parsed = parseSlashCommand(input);
+  const { command } = parsed;
+
+  // It's invalid if it starts with / but the command doesn't exist
+  return !(command.toLowerCase() in slashCommands);
+};
+
+/**
+ * Get the list of valid command names for error messages
+ */
+export const getValidCommandNames = (): string[] => {
+  return Object.keys(slashCommands).map((name) => `/${name}`);
 };

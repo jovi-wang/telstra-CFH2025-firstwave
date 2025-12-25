@@ -32,7 +32,7 @@ interface ChatStore {
 const initialMessage: ChatMessage = {
   role: 'assistant',
   content:
-    "Hello! I'm your AI assistant for bushfire disaster response operations. I can help you check connected network type and reachability, get drone location, boost stream quality, and more. How can I assist you?",
+    "Hello! I'm your AI assistant for power outage response operations. I can help you check connected network type and reachability, inspect power infrastructure, boost stream quality, and more. How can I assist you?",
   timestamp: new Date().toISOString(),
 };
 

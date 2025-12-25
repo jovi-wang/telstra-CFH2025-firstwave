@@ -5,8 +5,8 @@ import {
   Zap,
   Video,
   Eye,
-  Flame,
-  Cloud,
+  AlertTriangle,
+  Map,
   ShieldCheck,
   CheckCircle,
 } from 'lucide-react';
@@ -141,7 +141,36 @@ const StatusPanel = () => {
           })}
         </div>
       </div>
+      {/* Infrastructure Analysis */}
+      <div className='bg-background rounded-lg p-3 border border-gray-700'>
+        <div className='flex items-center space-x-2 mb-3'>
+          <Zap className='w-5 h-5 text-warning' />
+          <h3 className='font-semibold text-sm'>Infrastructure Analysis</h3>
+        </div>
+        <div className='space-y-3'>
+          {/* Damage Assessment */}
+          <div className='bg-surface rounded p-2 border border-gray-700'>
+            <div className='flex items-center space-x-2 mb-2'>
+              <AlertTriangle className='w-4 h-4 text-danger' />
+              <span className='text-sm font-medium'>Damage Assessment</span>
+            </div>
+            <div className='text-xs text-gray-400'>
+              AI-powered infrastructure damage detection
+            </div>
+          </div>
 
+          {/* Coverage Analysis */}
+          <div className='bg-surface rounded p-2 border border-gray-700'>
+            <div className='flex items-center space-x-2 mb-2'>
+              <Map className='w-4 h-4 text-primary' />
+              <span className='text-sm font-medium'>Coverage Analysis</span>
+            </div>
+            <div className='text-xs text-gray-400'>
+              Affected area and outage spread analysis
+            </div>
+          </div>
+        </div>
+      </div>
       {/* Vision AI Models */}
       <div className='bg-background rounded-lg p-3 border border-gray-700'>
         <div className='flex items-center space-x-2 mb-3'>
@@ -179,39 +208,6 @@ const StatusPanel = () => {
             </div>
             <div className='text-xs text-gray-400'>
               People, animals, vehicles detection
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Environmental Analysis */}
-      <div className='bg-background rounded-lg p-3 border border-gray-700'>
-        <div className='flex items-center space-x-2 mb-3'>
-          <Flame className='w-5 h-5 text-danger' />
-          <h3 className='font-semibold text-sm'>Environmental Analysis</h3>
-        </div>
-        <div className='space-y-3'>
-          {/* Fire Spread Prediction */}
-          <div className='bg-surface rounded p-2 border border-gray-700'>
-            <div className='flex items-center space-x-2 mb-2'>
-              <Flame className='w-4 h-4 text-danger' />
-              <span className='text-sm font-medium'>
-                Fire Spread Prediction
-              </span>
-            </div>
-            <div className='text-xs text-gray-400'>
-              AI-powered fire behavior forecasting
-            </div>
-          </div>
-
-          {/* Smoke Detection */}
-          <div className='bg-surface rounded p-2 border border-gray-700'>
-            <div className='flex items-center space-x-2 mb-2'>
-              <Cloud className='w-4 h-4 text-gray-400' />
-              <span className='text-sm font-medium'>Smoke Detection</span>
-            </div>
-            <div className='text-xs text-gray-400'>
-              Smoke coverage and density analysis
             </div>
           </div>
         </div>
