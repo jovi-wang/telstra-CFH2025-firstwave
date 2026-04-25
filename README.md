@@ -64,8 +64,8 @@ _Dashboard in incident mode displaying active disaster response with real-time v
                              │
             ┌────────────────│────────────────────┐
             │     ┌──────────▼──────────────┐     │
-            │     │  Open AI compatible LLM │     │
-            │     │ (gemini-2.0-flash-lite) │     │
+            │     │  AWS Bedrock Claude 3    │     │
+            │     │  Haiku (boto3 Converse)  │     │
             │     └─────────────────────────┘     │
             └─────────────────────────────────────┘
 ```
@@ -76,7 +76,7 @@ _Dashboard in incident mode displaying active disaster response with real-time v
 
 - **Node.js** 18+ (for dashboard)
 - **Python** 3.12+ (for backend)
-- **Google Gemini API Key** (set as environment variable)
+- **AWS Credentials** (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) hardcoded in `backend-api/app/config.py`
 
 ### 1. Start Backend API
 
@@ -286,6 +286,8 @@ Dashboard: Returns to normal status, clears incident markers
 
 The AI assistant chatbot supports slash commands for quick access to common operations. Type `/` to see available commands with autocomplete suggestions.
 
+**Note**: Slash commands are currently implemented for the **bushfire response use case** (main branch). Commands like `/report`, `/deploy-edge-application`, and `/verify-location` reference bushfire-specific prompts.
+
 **Available Commands:**
 
 | Command                       | Description                                                         | Usage                                        |
@@ -394,7 +396,7 @@ sequenceDiagram
     User->>FE: "Accept remote incoming WebRTC call"
     FE->>BE: POST /api/chat/message
     BE->>BE: AI Agent processes request
-    BE->>MCP: handle_webrtc_call(action: create)
+    BE->>MCP: handle_webrtc_call(type: accept_media_session)
     MCP-->>BE: {sessionId}
     Drone->>Edge: Start WebRTC video stream
     Edge-->>Drone: Stream acknowledged
@@ -447,7 +449,7 @@ sequenceDiagram
     loop Every 10 seconds
         BE->>MCP: Connectivity Insights API
         MCP-->>BE: {latency, jitter, packetLoss, throughput}
-        BE-->>FE: SSE: connectivity_insights
+        BE-->>FE: SSE: connectivity_insight
         FE->>FE: Update NetworkMetricsPanel KPIs
     end
 
@@ -475,7 +477,7 @@ sequenceDiagram
     FE->>BE: POST /api/chat/message
     BE->>BE: AI Agent processes cleanup request
 
-    BE->>MCP: handle_webrtc_call(action: cancel)
+    BE->>MCP: handle_webrtc_call(type: cancel_media_session)
     MCP->>Edge: Terminate WebRTC session
     Edge-->>MCP: Session terminated
     MCP-->>BE: WebRTC call ended

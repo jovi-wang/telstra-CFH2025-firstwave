@@ -121,7 +121,5 @@ temp/
 *.swp
 *.swo
 *~.nib
-
-CLAUDE.md
-QWEN.md
+.claude
 *.mp4

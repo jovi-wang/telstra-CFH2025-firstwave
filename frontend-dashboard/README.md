@@ -18,7 +18,7 @@ npm run dev
 open http://localhost:5173
 ```
 
-**Note**: Make sure the backend API is running on port 4000 with a valid Gemini API key before starting the dashboard.
+**Note**: Make sure the backend API is running on port 4000 before starting the dashboard.
 
 ## 📦 What's Built
 

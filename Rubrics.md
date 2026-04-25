@@ -166,7 +166,7 @@ This solution leverages 15 CAMARA network APIs across 6 categories to deliver a 
 | **React 19 + TypeScript**        | Frontend framework   |
 | **Vite**                         | Build tool           |
 | **FastAPI (Python 3.12)**        | Backend framework    |
-| **Google Gemini 2.0 Flash Lite** | LLM for AI agent     |
+| **AWS Bedrock Claude 3 Haiku**   | LLM for AI agent     |
 | **FastMCP**                      | MCP server framework |
 | **Zustand**                      | State management     |
 | **Leaflet**                      | Mapping library      |
@@ -215,7 +215,7 @@ firstwave/
 │   │   │   └── events.py                  # SSE event stream endpoint
 │   │   ├── services/
 │   │   │   ├── ai_agent.py                # AI agent orchestration
-│   │   │   ├── llm_service.py             # Google Gemini API client
+│   │   │   ├── llm_service.py             # AWS Bedrock Claude client (boto3)
 │   │   │   ├── mcp_client.py              # MCP client
 │   │   │   └── mcp_server.py              # MCP server with CAMARA tools
 │   │   ├── main.py                        # FastAPI app initialisation
@@ -236,7 +236,7 @@ firstwave/
 - **Performance**: React.memo for expensive components, virtual scrolling, debounced updates, code splitting, bundle optimisation (CSS ~10KB)
 - **Real-time Architecture**: Frontend SSE → Backend FastAPI → Async background tasks (location every 10s, device count every 30s) → Broadcast to all clients
 - **Testing**: Unit tests (React Testing Library, Zustand), integration tests (FastAPI TestClient, MCP mocks), E2E tests (Playwright)
-- **Observability**: Structured logging with context (request_id, tool_name), metrics (MCP latency, SSE connections, Gemini API response time)
+- **Observability**: Structured logging with context (request_id, tool_name), metrics (MCP latency, SSE connections, Bedrock API response time)
 
 ### Scalability Considerations
 
@@ -331,7 +331,7 @@ firstwave/
 
 - CAMARA API costs: $5K/year (when using real APIs)
 - Cloud infrastructure (AWS/Azure): $8K/year
-- Gemini API (LLM): $2K/year (assuming 100K queries/month)
+- Bedrock API (LLM): $2K/year (assuming 100K queries/month)
 - Support & maintenance: $15K/year
 - **Total COGS**: $30K/year
 

@@ -196,5 +196,5 @@ async def health_check():
     return {
         "status": "healthy",
         "mcp_server": mcp_status,
-        "llm_endpoint": settings.LLM_BASE_URL,
+        "llm_model": settings.BEDROCK_MODEL_ID,
     }

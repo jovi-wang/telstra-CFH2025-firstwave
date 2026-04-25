@@ -24,7 +24,7 @@ The server will start at `http://localhost:4000`
 ### Prerequisites
 
 - **Python 3.12+** with `uv` package manager
-- **Google Gemini API Key** - Get from [Google AI Studio](https://aistudio.google.com/apikey)
+- **AWS Credentials** (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) configured in `app/config.py`
 - Virtual environment with dependencies installed (`.venv` folder)
 
 ### Install Dependencies (First Time Setup)
@@ -32,11 +32,6 @@ The server will start at `http://localhost:4000`
 ```bash
 cd backend-api
 uv sync  # Install all dependencies from pyproject.toml
-
-# Set your Gemini API key
-export GEMINI_API_KEY="your-api-key-here"
-# Or create a .env file
-echo "GEMINI_API_KEY=your-api-key-here" > .env
 ```
 
 ## 📡 API Endpoints
@@ -90,7 +85,7 @@ curl --request POST \
 │        │                 │              │
 │  ┌─────▼──────┐   ┌─────▼──────┐        │
 │  │ LLM Service│   │ MCP Client │        │
-│  │  (Gemini)  │   │  (stdio)   │        │
+│  │ (Bedrock)  │   │  (stdio)   │        │
 │  └──────┬─────┘   └─────┬──────┘        │
 │         │                │              │
 └─────────┼────────────────┼──────────────┘
@@ -101,9 +96,9 @@ curl --request POST \
           │         └─────────────┘
           │
    ┌──────▼───────────────┐
-   │  Google Gemini API   │
-   │ (gemini-2.0-flash-   │
-   │       lite)          │
+   │   AWS Bedrock        │
+   │  Claude 3 Haiku      │
+   │ (boto3 Converse API) │
    └──────────────────────┘
 ```
 
@@ -124,8 +119,8 @@ curl --request POST \
 
 ### 3. LLM Service (`app/services/llm_service.py`)
 
-- Connects to Google Gemini API (gemini-2.0-flash-lite model)
-- Supports function/tool calling via Gemini's native function calling
+- Connects to AWS Bedrock Claude 3 Haiku (`anthropic.claude-3-haiku-20240307-v1:0`) via boto3 Converse API
+- Supports function/tool calling via Bedrock's native tool use
 - Streams LLM responses token by token
 
 ### 4. MCP Client (`app/services/mcp_client.py`)
@@ -169,9 +164,11 @@ curl --request POST \
 HOST = "0.0.0.0"
 PORT = 4000
 
-# Google Gemini API
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_MODEL = "gemini-2.0-flash-lite"  # Fast and efficient model
+# AWS Bedrock - Claude 3 Haiku
+AWS_ACCESS_KEY_ID = "..."          # hardcoded for hackathon
+AWS_SECRET_ACCESS_KEY = "..."      # hardcoded for hackathon
+AWS_REGION = "ap-southeast-2"
+BEDROCK_MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
 
 # CORS settings
 CORS_ORIGINS = ["*"]  # Allow all origins for development
