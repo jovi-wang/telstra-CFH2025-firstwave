@@ -6,9 +6,9 @@ const FRONTEND_URL = 'http://localhost:5173';
 
 export default defineConfig({
   testDir: './tests',
-  timeout: 60_000,       // 60s per test (AI responses can be slow)
+  timeout: 60_000, // 60s per test (AI responses can be slow)
   expect: { timeout: 30_000 },
-  fullyParallel: false,  // Tests are sequential (shared state in backend)
+  fullyParallel: false, // Tests are sequential (shared state in backend)
   retries: 0,
   workers: 1,
   reporter: 'list',
@@ -17,8 +17,6 @@ export default defineConfig({
     baseURL: FRONTEND_URL,
     trace: 'on-first-retry',
     headless: false,
-    slowMo: 500,
-    viewport: { width: 1920, height: 1080 },
   },
 
   projects: [
@@ -29,6 +27,7 @@ export default defineConfig({
         channel: 'chrome',
         viewport: { width: 1920, height: 1080 },
         launchOptions: {
+          slowMo: 250,
           args: [
             '--window-size=1920,1080',
             '--window-position=0,0',

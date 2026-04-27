@@ -20,9 +20,7 @@ interface ChatStore {
 
   // Actions
   addMessage: (message: ChatMessage) => void;
-  updateLastMessage: (updates: Partial<ChatMessage>) => void;
   updateOrAddAssistantMessage: (message: ChatMessage) => void;
-  setMessages: (messages: ChatMessage[]) => void;
   setConversationId: (id: string | null) => void;
   setIsTyping: (isTyping: boolean) => void;
   toggleToolCollapse: (messageIndex: number, toolIndex: number) => void;
@@ -49,21 +47,6 @@ export const useChatStore = create<ChatStore>((set) => ({
       messages: [...state.messages, message],
     })),
 
-  updateLastMessage: (updates) =>
-    set((state) => {
-      const messages = [...state.messages];
-      const lastIndex = messages.length - 1;
-
-      if (lastIndex >= 0) {
-        messages[lastIndex] = {
-          ...messages[lastIndex],
-          ...updates,
-        };
-      }
-
-      return { messages };
-    }),
-
   updateOrAddAssistantMessage: (message) =>
     set((state) => {
       const messages = [...state.messages];
@@ -79,8 +62,6 @@ export const useChatStore = create<ChatStore>((set) => ({
 
       return { messages };
     }),
-
-  setMessages: (messages) => set({ messages }),
 
   setConversationId: (id) => set({ conversationId: id }),
 

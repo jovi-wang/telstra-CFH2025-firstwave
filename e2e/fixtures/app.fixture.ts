@@ -7,15 +7,11 @@ import { type Page, type Locator, expect } from '@playwright/test';
 export class ChatbotPage {
   readonly page: Page;
   readonly chatInput: Locator;
-  readonly sendButton: Locator;
-  readonly chatMessages: Locator;
   readonly emergencyButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
     this.chatInput = page.locator('textarea').last();
-    this.sendButton = page.locator('button[type="submit"], button').filter({ hasText: '' }).last();
-    this.chatMessages = page.locator('[class*="message"], [class*="chat"]');
     this.emergencyButton = page.locator('button').filter({ hasText: /Emergency Mode|Exit Emergency/i });
   }
 
@@ -53,15 +49,6 @@ export class ChatbotPage {
   }
 
   /**
-   * Assert that the last assistant message contains the given text (case-insensitive).
-   */
-  async expectLastResponseToContain(text: string) {
-    // Assistant messages are the last non-user message bubbles
-    const lastMessage = this.page.locator('[class*="assistant"], [class*="bot"]').last();
-    await expect(lastMessage).toContainText(text, { ignoreCase: true, timeout: 30_000 });
-  }
-
-  /**
    * Manually activate emergency mode by clicking the header button.
    * Call this after reporting an incident (the dashboard does NOT auto-switch).
    */
@@ -82,12 +69,5 @@ export class ChatbotPage {
    */
   async expectEmergencyMode() {
     await expect(this.emergencyButton).toContainText('Exit Emergency', { timeout: 30_000 });
-  }
-
-  /**
-   * Wait for a map marker/element matching the given test-id or text to appear.
-   */
-  async expectMapElementVisible(selector: string) {
-    await expect(this.page.locator(selector)).toBeVisible({ timeout: 30_000 });
   }
 }

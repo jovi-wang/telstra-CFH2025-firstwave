@@ -425,20 +425,12 @@ User: "Conduct preflight integrity check" or "Check device integrity for drone k
         # Send completion signal
         yield {"type": "complete", "data": {}}
 
-    def get_conversation(self, conversation_id: str) -> List[Dict] | None:
-        """Get conversation history by ID"""
-        return self.conversations.get(conversation_id)
-
     def clear_conversation(self, conversation_id: str) -> bool:
         """Clear conversation history"""
         if conversation_id in self.conversations:
             del self.conversations[conversation_id]
             return True
         return False
-
-    def list_conversations(self) -> List[str]:
-        """List all active conversation IDs"""
-        return list(self.conversations.keys())
 
     def _track_subscription(
         self,

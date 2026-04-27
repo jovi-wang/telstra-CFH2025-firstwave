@@ -14,7 +14,6 @@ export type EventType =
   | 'device_reachability'
   | 'connectivity_insight'
   | 'incoming_webrtc'
-  | 'location_update'
   | 'region_device_count';
 
 /**
@@ -39,7 +38,6 @@ class EventStreamService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 2000; // Start with 2 seconds
-  private isConnected = false;
 
   /**
    * Connect to event stream
@@ -54,7 +52,6 @@ class EventStreamService {
     // Connection opened
     this.eventSource.addEventListener('connected', (e) => {
       JSON.parse(e.data); // Parse to validate format
-      this.isConnected = true;
       this.reconnectAttempts = 0;
       this.reconnectDelay = 2000;
     });
@@ -77,13 +74,6 @@ class EventStreamService {
       });
     });
 
-    // Handle location_update - not emit to subscribers but log the data, TODO (emit to TelemetryPanel for location fusion display)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    this.eventSource.addEventListener('location_update', (event: any) => {
-      const data = JSON.parse(event.data);
-      console.log('📍 Location Update Event:', data);
-    });
-
     // Handle region_device_count - emit with data (used for heatmap display)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.eventSource.addEventListener('region_device_count', (event: any) => {
@@ -95,7 +85,6 @@ class EventStreamService {
     // Error handling with exponential backoff reconnection
     this.eventSource.onerror = (error) => {
       console.error('❌ EventSource error:', error);
-      this.isConnected = false;
       this.eventSource?.close();
       this.eventSource = null;
 
@@ -140,33 +129,6 @@ class EventStreamService {
 
     // Emit to 'all' listeners
     this.listeners.get('all')?.forEach((cb) => cb(event));
-  }
-
-  /**
-   * Disconnect from event stream
-   */
-  disconnect() {
-    this.eventSource?.close();
-    this.eventSource = null;
-    this.isConnected = false;
-    this.listeners.clear();
-    this.reconnectAttempts = 0;
-  }
-
-  /**
-   * Check if connected
-   */
-  getConnectionStatus(): boolean {
-    return this.isConnected;
-  }
-
-  /**
-   * Manually trigger reconnection
-   */
-  reconnect() {
-    this.disconnect();
-    this.reconnectAttempts = 0;
-    this.connect();
   }
 }
 

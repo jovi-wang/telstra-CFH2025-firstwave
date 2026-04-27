@@ -21,7 +21,6 @@ interface MapStore {
   geofencingCircle: { lat: number; lon: number; radius: number } | null;
 
   // Actions
-  setMapCenter: (center: { lat: number; lon: number }) => void;
   moveMapToAddress: (address: string, lat: number, lon: number) => void;
   addDroneKitMarker: (lat: number, lon: number) => void;
   addEdgeNodeMarker: (lat: number, lon: number, zoneName: string) => void;
@@ -38,9 +37,6 @@ export const useMapStore = create<MapStore>((set) => ({
   droneKitLocation: null,
   edgeNodeLocation: null,
   geofencingCircle: null,
-
-  // Actions
-  setMapCenter: (center) => set({ mapCenter: center }),
 
   moveMapToAddress: (address, lat, lon) =>
     set({

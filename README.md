@@ -123,7 +123,7 @@ Dashboard runs at `http://localhost:5173`
 - **FastAPI Server**: backend API, SSE and events endpoints
 - **AI Agent**: LLM-powered chatbot with tool calling capabilities
 - **MCP Client**: Communicates with CAMARA MCP server via stdio
-- **Event Streaming**: Periodic location updates (10s) and device count updates (30s)
+- **Event Streaming**: Periodic region device count updates (30s)
 
 ### 3. CAMARA MCP Server (FastMCP)
 
@@ -243,7 +243,6 @@ Dashboard: QoS badge updates to "QOS_H"
 
 During the mission, the backend automatically:
 
-- Updates drone location every 10 seconds (displayed on map with trail)
 - Updates region device count every 30 seconds (heatmap visualisation)
 - Streams connectivity insights and network status to dashboard
 - Displays all active subscription events
@@ -405,15 +404,6 @@ sequenceDiagram
     FE->>FE: Show video in VideoStreamViewer
 
     Note over User,Drone: Phase 3: Continuous Monitoring
-    loop Every 10 seconds
-        BE->>MCP: Location Retrieval API
-        MCP->>Drone: Get GPS location
-        Drone-->>MCP: {gps, network locations}
-        MCP-->>BE: {fused location}
-        BE-->>FE: SSE: location_update
-        FE->>FE: Update drone marker on map<br/>Update TelemetryPanel
-    end
-
     loop Every 30 seconds
         BE->>MCP: Region Device Count API
         MCP-->>BE: {deviceCount, heatmapData}

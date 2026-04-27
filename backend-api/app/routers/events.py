@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import json
@@ -10,7 +10,7 @@ router = APIRouter(prefix="/api/events", tags=["events"])
 class EventPublishRequest(BaseModel):
     """Request model for publishing an event"""
 
-    event_type: str  # e.g., "geofence", "connected_network_type", "device_reachability", "connectivity_insight", "incoming_webrtc", "location_update", "region_device_count"
+    event_type: str  # e.g., "geofence", "connected_network_type", "device_reachability", "connectivity_insight", "incoming_webrtc", "region_device_count"
 
 
 # Store for connected SSE clients
@@ -75,7 +75,6 @@ async def event_stream():
     - device_reachability: Device reachability events
     - connectivity_insight: Connectivity insight events
     - incoming_webrtc: Incoming WebRTC call notifications
-    - location_update: Periodic drone location updates (every 10 seconds)
     - region_device_count: Regional device count updates (every 30 seconds)
 
     Each event contains:

@@ -23,13 +23,9 @@ interface SubscriptionsStore {
   addSubscription: (subscription: Subscription) => void;
   removeSubscription: (subscriptionId: string) => void;
   clearAllSubscriptions: () => void;
-
-  // Derived state
-  getSubscriptionById: (subscriptionId: string) => Subscription | undefined;
-  hasGeofencingSubscription: () => boolean;
 }
 
-export const useSubscriptionsStore = create<SubscriptionsStore>((set, get) => ({
+export const useSubscriptionsStore = create<SubscriptionsStore>((set) => ({
   // Initial state
   activeSubscriptions: [],
 
@@ -47,11 +43,4 @@ export const useSubscriptionsStore = create<SubscriptionsStore>((set, get) => ({
     })),
 
   clearAllSubscriptions: () => set({ activeSubscriptions: [] }),
-
-  // Derived state
-  getSubscriptionById: (subscriptionId) =>
-    get().activeSubscriptions.find((sub) => sub.id === subscriptionId),
-
-  hasGeofencingSubscription: () =>
-    get().activeSubscriptions.some((sub) => sub.type === 'Geofencing'),
 }));

@@ -11,54 +11,6 @@ import random
 background_tasks = []
 
 
-async def send_periodic_location_updates():
-    """Background task that sends fake location data every 10 seconds"""
-    import sys
-
-    # Melbourne CBD area base coordinates
-    base_lat = -37.8136
-    base_lon = 144.9631
-
-    print(
-        "📍 Starting periodic location updates (every 10 seconds)...",
-        file=sys.stderr,
-        flush=True,
-    )
-
-    try:
-        while True:
-            # Generate fake coordinates with small random offset (simulating drone movement)
-            # Offset range: ~500m radius
-            lat_offset = random.uniform(-0.005, 0.005)
-            lon_offset = random.uniform(-0.005, 0.005)
-
-            fake_lat = base_lat + lat_offset
-            fake_lon = base_lon + lon_offset
-
-            # Create location update event
-            location_event = {
-                "event_type": "location_update",
-                "lat": round(fake_lat, 6),
-                "lon": round(fake_lon, 6),
-            }
-
-            # Broadcast to all connected clients
-            for client_queue in events.connected_clients:
-                try:
-                    await asyncio.wait_for(
-                        client_queue.put(location_event), timeout=0.5
-                    )
-                except (asyncio.TimeoutError, Exception):
-                    pass
-
-            # Wait 10 seconds before next update
-            await asyncio.sleep(10)
-
-    except asyncio.CancelledError:
-        print("📍 Stopped periodic location updates", file=sys.stderr, flush=True)
-        raise
-
-
 async def send_periodic_region_device_count():
     """Background task that sends region device count data every 30 seconds"""
     import sys
@@ -125,10 +77,6 @@ async def lifespan(app: FastAPI):
             file=sys.stderr,
             flush=True,
         )
-
-    # Start background task for periodic location updates
-    location_task = asyncio.create_task(send_periodic_location_updates())
-    background_tasks.append(location_task)
 
     # Start background task for periodic region device count
     device_count_task = asyncio.create_task(send_periodic_region_device_count())

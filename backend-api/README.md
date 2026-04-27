@@ -107,7 +107,6 @@ curl --request POST \
 - Async web framework with CORS middleware
 - Lifespan management for MCP client connection
 - Background tasks for periodic updates:
-  - Location updates every 10 seconds
   - Region device count updates every 30 seconds
 
 ### 2. AI Agent (`app/services/ai_agent.py`)
@@ -160,10 +159,6 @@ curl --request POST \
 ## 🔧 Configuration (`app/config.py`)
 
 ```python
-# Server settings
-HOST = "0.0.0.0"
-PORT = 4000
-
 # AWS Bedrock - Claude 3 Haiku
 AWS_ACCESS_KEY_ID = "..."          # hardcoded for hackathon
 AWS_SECRET_ACCESS_KEY = "..."      # hardcoded for hackathon

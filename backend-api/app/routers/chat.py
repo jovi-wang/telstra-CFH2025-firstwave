@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from app.services.ai_agent import ai_agent
 from pydantic import BaseModel

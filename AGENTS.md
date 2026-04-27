@@ -105,7 +105,7 @@ npm run build
    - AI Agent orchestration
    - MCP Client for tool execution
    - SSE streaming for real-time updates
-   - Periodic location updates (10s) and device count updates (30s)
+   - Periodic device count updates (30s)
 
 4. **MCP Server** - FastMCP-based server providing 14 tools that mock CAMARA APIs:
 
@@ -221,7 +221,7 @@ The complete mission follows this 16-step sequence (workflow is the same for bot
 ### Phase 3: Continuous Monitoring (Steps 7-9)
 
 7. **Network Type Monitoring** (via subscriptions): Backend monitors drone's network connectivity type (4G/5G) using Connected Network Type API and reachability status (SMS/DATA) using Device Reachability Status API → displayed on dashboard
-8. **Location Tracking** (every 10 seconds): Backend monitors drone location using Location Retrieval API, fused with GPS data → accurate location shown on dashboard map
+8. **Location Verification**: Backend can verify drone location against the incident scene when requested via the Location Verification API
 9. **Region Device Count** (every 30 seconds): Backend uses Region Device Count API to check connected devices in area:
    - Bushfire: Spike = people gathering (rescue attention needed), Drop = network issues
    - Power Outage: Spike = customers restored, Drop = more customers affected
@@ -571,16 +571,11 @@ Edge Node: Returned by discover_edge_node tool (near Melbourne CBD)
 Geofencing Circle: Centered on incident location with configurable radius (e.g., 200m)
 ```
 
-**Background Task Locations** (in `main.py`):
-- Periodic location updates simulate drone movement with random offsets within ~500m radius of base (-37.8136, 144.9631)
-- Updates broadcast every 10 seconds via SSE to all connected clients
+### Demo Defaults
 
-### Device IDs
-
-Default values (configured in `config.py`):
-- Drone: `drone-001` (`DEFAULT_DRONE_ID`)
-- Phone Number: `+61491570006` (`DEFAULT_PHONE_NUMBER`)
-- Default Incident: -37.8136, 144.9631 (`DEFAULT_INCIDENT_LAT`, `DEFAULT_INCIDENT_LON`)
+Common demo values:
+- Drone ID: `drone-001`
+- Phone Number: `+61491570157`
 
 ## Color Scheme
 
@@ -607,14 +602,12 @@ Geofence: #8b5cf6 (purple)
 The backend automatically sends real-time updates via **Server-Sent Events (SSE)**:
 
 **Backend Periodic Tasks** (configured in `backend-api/app/main.py`):
-- Location updates: every 10 seconds (broadcasted to all connected clients via `send_periodic_location_updates()`)
 - Region Device Count: every 30 seconds (broadcasted to all connected clients via `send_periodic_region_device_count()`)
 
 **Frontend Event Stream** (`frontend-dashboard/src/services/eventStreamService.ts`):
 The event stream service connects to `/api/events/stream` and processes events:
 ```typescript
 // Event types handled:
-// - location_update: Updates drone position on map
 // - region_device_count: Updates device count heatmap
 // - connectivity_insight: Network performance events
 // - connected_network_type: Network type changes
@@ -747,12 +740,10 @@ The AI assistant (powered by AWS Bedrock Claude 3 Haiku with MCP tool calling) r
 
 ## Reference Documents
 
-For detailed specifications, refer to:
+For repo context, refer to:
 
-- `architecture_overview.md` - System architecture and components
-- `api_integration_guide.md` - All 8 API specifications with examples
-- `dashboard_components.md` - UI component specifications
-- `implementation_checklist.md` - Step-by-step implementation guide
-- `mock_data_spec.md` - Mock data generators and test scenarios
-- `quick_reference.md` - Quick reference for common tasks
-- `disaster_response_sequence.mermaid` - Visual workflow diagram
+- `README.md` - Primary overview for architecture, workflow, and setup
+- `backend-api/README.md` - Backend endpoints, MCP tools, and runtime details
+- `Rubrics.md` - Hackathon rubric coverage and future-state pitch context
+- `business_strategy.md` - Commercial and market context for the project
+- `presentation.md` - Presentation-oriented summary of the solution

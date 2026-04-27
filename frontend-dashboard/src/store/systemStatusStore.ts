@@ -26,7 +26,6 @@ interface SystemStatusStore {
   edgeDeployment: EdgeDeployment | null;
 
   // Actions
-  setEmergencyMode: (active: boolean) => void;
   toggleEmergencyMode: () => void;
   setDroneActive: (active: boolean) => void;
   setStreamActive: (active: boolean) => void;
@@ -56,7 +55,6 @@ export const useSystemStatusStore = create<SystemStatusStore>((set, get) => ({
   edgeDeployment: null,
 
   // Actions
-  setEmergencyMode: (active) => set({ isEmergencyMode: active }),
   toggleEmergencyMode: () => set({ isEmergencyMode: !get().isEmergencyMode }),
   setDroneActive: (active) => set({ droneActive: active }),
   setStreamActive: (active) => set({ streamActive: active }),

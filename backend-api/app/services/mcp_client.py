@@ -138,10 +138,6 @@ class MCPClient:
 
         return bedrock_tools
 
-    def get_tool_names(self) -> List[str]:
-        """Get list of available tool names"""
-        return [tool.name for tool in self.available_tools]
-
 
 # Global MCP client instance
 mcp_client = MCPClient()
