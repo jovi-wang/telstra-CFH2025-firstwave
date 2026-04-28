@@ -33,7 +33,7 @@ interface AIAssistantChatbotProps {
     deploymentId: string,
     imageId: string,
     zoneName: string,
-    status: string
+    status: string,
   ) => void;
   onClearEdgeDeployment?: () => void;
   onAddGeofencingCircle?: (lat: number, lon: number, radius: number) => void;
@@ -66,7 +66,7 @@ const AIAssistantChatbot = ({
   const collapsedTools = useChatStore((state) => state.collapsedTools);
   const addMessage = useChatStore((state) => state.addMessage);
   const updateOrAddAssistantMessage = useChatStore(
-    (state) => state.updateOrAddAssistantMessage
+    (state) => state.updateOrAddAssistantMessage,
   );
   const setConversationId = useChatStore((state) => state.setConversationId);
   const setIsTyping = useChatStore((state) => state.setIsTyping);
@@ -76,20 +76,20 @@ const AIAssistantChatbot = ({
   // Get system status update actions
   const setDroneActive = useSystemStatusStore((state) => state.setDroneActive);
   const setStreamActive = useSystemStatusStore(
-    (state) => state.setStreamActive
+    (state) => state.setStreamActive,
   );
   const setEdgeProcessing = useSystemStatusStore(
-    (state) => state.setEdgeProcessing
+    (state) => state.setEdgeProcessing,
   );
   const setSessionId = useSystemStatusStore((state) => state.setSessionId);
   const setCurrentQoSProfile = useSystemStatusStore(
-    (state) => state.setCurrentQoSProfile
+    (state) => state.setCurrentQoSProfile,
   );
   const setQodSessionId = useSystemStatusStore(
-    (state) => state.setQodSessionId
+    (state) => state.setQodSessionId,
   );
   const resetAllStatuses = useSystemStatusStore(
-    (state) => state.resetAllStatuses
+    (state) => state.resetAllStatuses,
   );
 
   const [inputValue, setInputValue] = useState('');
@@ -105,14 +105,17 @@ const AIAssistantChatbot = ({
       textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height = `${Math.min(
         textareaRef.current.scrollHeight,
-        150
+        150,
       )}px`;
     }
   }, [inputValue]);
 
   // Scroll highlighted command suggestion into view
   useEffect(() => {
-    if (selectedCommandIndex >= 0 && commandSuggestionRefs.current[selectedCommandIndex]) {
+    if (
+      selectedCommandIndex >= 0 &&
+      commandSuggestionRefs.current[selectedCommandIndex]
+    ) {
       commandSuggestionRefs.current[selectedCommandIndex]?.scrollIntoView({
         block: 'nearest',
         behavior: 'smooth',
@@ -159,7 +162,7 @@ const AIAssistantChatbot = ({
       tool: string;
       arguments: Record<string, unknown>;
       result?: unknown;
-    } | null
+    } | null,
   ) => {
     try {
       if (event.type === 'message_start') {
@@ -193,7 +196,7 @@ const AIAssistantChatbot = ({
 
         // Update tool call with result
         const toolCall = assistantMessage.toolCalls?.find(
-          (tc) => tc.tool === event.data.tool
+          (tc) => tc.tool === event.data.tool,
         );
         if (toolCall) {
           toolCall.result = event.data.result;
@@ -210,7 +213,7 @@ const AIAssistantChatbot = ({
             onMoveMap(
               result.address || result.display_name,
               result.latitude,
-              result.longitude
+              result.longitude,
             );
           }
         }
@@ -218,13 +221,13 @@ const AIAssistantChatbot = ({
         // Check if this is verify_location tool and add drone kit marker
         if (event.data.tool === 'verify_location' && event.data.result) {
           const result = event.data.result as any;
-          if (result.verificationResult === 'TRUE') {
+          if (result.verificationResult === 'true') {
             // Set drone active status
             setDroneActive(true);
 
             // Get coordinates from the current tool call arguments
             const toolCall = assistantMessage.toolCalls?.find(
-              (tc) => tc.tool === 'verify_location'
+              (tc) => tc.tool === 'verify_location',
             );
             if (toolCall && toolCall.arguments) {
               const { latitude, longitude } = toolCall.arguments;
@@ -277,7 +280,7 @@ const AIAssistantChatbot = ({
               result.deployment_id,
               result.image_id,
               result.edge_zone_name,
-              result.status
+              result.status,
             );
           }
         }
@@ -289,7 +292,7 @@ const AIAssistantChatbot = ({
         ) {
           // Get deployment_id from the matching tool call in assistantMessage
           const toolCall = assistantMessage.toolCalls?.find(
-            (tc) => tc.tool === 'undeploy_edge_application'
+            (tc) => tc.tool === 'undeploy_edge_application',
           );
           if (toolCall && toolCall.arguments) {
             const deploymentId = (toolCall.arguments as any).deployment_id;
@@ -314,7 +317,7 @@ const AIAssistantChatbot = ({
               onAddGeofencingCircle(
                 result.latitude,
                 result.longitude,
-                result.radius
+                result.radius,
               );
             }
 
@@ -343,7 +346,7 @@ const AIAssistantChatbot = ({
         ) {
           // Get subscription_id from the matching tool call in assistantMessage
           const toolCall = assistantMessage.toolCalls?.find(
-            (tc) => tc.tool === 'unsubscribe_geofencing'
+            (tc) => tc.tool === 'unsubscribe_geofencing',
           );
           if (toolCall && toolCall.arguments) {
             const subscriptionId = (toolCall.arguments as any).subscription_id;
@@ -380,7 +383,7 @@ const AIAssistantChatbot = ({
         ) {
           // Get subscription_id from the matching tool call in assistantMessage
           const toolCall = assistantMessage.toolCalls?.find(
-            (tc) => tc.tool === 'unsubscribe_connected_network'
+            (tc) => tc.tool === 'unsubscribe_connected_network',
           );
           if (toolCall && toolCall.arguments) {
             const subscriptionId = (toolCall.arguments as any).subscription_id;
@@ -397,7 +400,7 @@ const AIAssistantChatbot = ({
         ) {
           // Get type parameter from tool arguments
           const toolCall = assistantMessage.toolCalls?.find(
-            (tc) => tc.tool === 'handle_webrtc_call'
+            (tc) => tc.tool === 'handle_webrtc_call',
           );
           if (toolCall && toolCall.arguments) {
             const { type } = toolCall.arguments as any;
@@ -463,7 +466,7 @@ const AIAssistantChatbot = ({
       } else if (event.type === 'mission_complete') {
         // Mission completion - reset all dashboard state after 2 second delay
         console.log(
-          '🎯 Mission complete event received - resetting dashboard in 2 seconds'
+          '🎯 Mission complete event received - resetting dashboard in 2 seconds',
         );
 
         // Keep typing indicator active for 2 seconds
@@ -640,7 +643,11 @@ const AIAssistantChatbot = ({
       : [];
 
     if (e.key === 'Enter' && !e.shiftKey) {
-      if (showCommandSuggestions && selectedCommandIndex >= 0 && commands.length > 0) {
+      if (
+        showCommandSuggestions &&
+        selectedCommandIndex >= 0 &&
+        commands.length > 0
+      ) {
         // Use the currently highlighted suggestion instead of sending
         e.preventDefault();
         const selected = commands[selectedCommandIndex];
@@ -655,10 +662,14 @@ const AIAssistantChatbot = ({
       }
     } else if (e.key === 'ArrowDown' && showCommandSuggestions) {
       e.preventDefault();
-      setSelectedCommandIndex((prev) => (prev < commands.length - 1 ? prev + 1 : 0));
+      setSelectedCommandIndex((prev) =>
+        prev < commands.length - 1 ? prev + 1 : 0,
+      );
     } else if (e.key === 'ArrowUp' && showCommandSuggestions) {
       e.preventDefault();
-      setSelectedCommandIndex((prev) => (prev > 0 ? prev - 1 : commands.length - 1));
+      setSelectedCommandIndex((prev) =>
+        prev > 0 ? prev - 1 : commands.length - 1,
+      );
     } else if (e.key === 'Escape' && showCommandSuggestions) {
       e.preventDefault();
       setShowCommandSuggestions(false);
@@ -707,8 +718,8 @@ const AIAssistantChatbot = ({
                     message.role === 'user'
                       ? 'bg-primary'
                       : message.role === 'system'
-                      ? 'bg-warning'
-                      : 'bg-geofence'
+                        ? 'bg-warning'
+                        : 'bg-geofence'
                   }`}
                 >
                   {message.role === 'user' ? (
@@ -727,8 +738,8 @@ const AIAssistantChatbot = ({
                       message.role === 'user'
                         ? 'bg-primary bg-opacity-20 self-end'
                         : message.role === 'system'
-                        ? 'bg-warning bg-opacity-20 border-l-4 border-warning self-start'
-                        : 'bg-background self-start'
+                          ? 'bg-warning bg-opacity-20 border-l-4 border-warning self-start'
+                          : 'bg-background self-start'
                     }`}
                   >
                     <div className='text-base break-words prose prose-invert prose-sm max-w-none'>
@@ -873,7 +884,7 @@ const AIAssistantChatbot = ({
                                                     : String(value)}
                                                 </span>
                                               </div>
-                                            )
+                                            ),
                                           )}
                                         </div>
                                       </div>
@@ -896,7 +907,7 @@ const AIAssistantChatbot = ({
                                               tool.result as Record<
                                                 string,
                                                 unknown
-                                              >
+                                              >,
                                             ).map(([key, value]) => (
                                               <div
                                                 key={key}
@@ -910,7 +921,7 @@ const AIAssistantChatbot = ({
                                                     ? JSON.stringify(
                                                         value,
                                                         null,
-                                                        2
+                                                        2,
                                                       )
                                                     : String(value)}
                                                 </span>
@@ -922,7 +933,7 @@ const AIAssistantChatbot = ({
                                             {JSON.stringify(
                                               tool.result,
                                               null,
-                                              2
+                                              2,
                                             )}
                                           </pre>
                                         )}
@@ -1024,7 +1035,7 @@ const AIAssistantChatbot = ({
                   const commands = getAvailableSlashCommands(filterText);
                   // Reset refs array length to match commands
                   commandSuggestionRefs.current = commands.map(
-                    (_, i) => commandSuggestionRefs.current[i] || null
+                    (_, i) => commandSuggestionRefs.current[i] || null,
                   );
 
                   return commands.map((cmd, index) => (

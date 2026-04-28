@@ -276,7 +276,7 @@ async def verify_location(
 
     Returns:
         JSON string with:
-        - verificationResult: "TRUE" if within radius, "FALSE" otherwise
+        - verificationResult: "true" if within radius, "false" otherwise
         - lastLocationTime: Time of last location check (e.g., "30 seconds ago")
     """
     log(f"🔧 Tool called: verify_location")
@@ -288,8 +288,8 @@ async def verify_location(
     last_location_time = datetime.now() - timedelta(seconds=30)
     time_ago_str = "30 seconds ago"
 
-    # Mock implementation - always returns TRUE for demo
-    result_data = {"verificationResult": "TRUE", "lastLocationTime": time_ago_str}
+    # Mock implementation - always returns true for demo
+    result_data = {"verificationResult": "true", "lastLocationTime": time_ago_str}
 
     log(f"✅ Tool completed: verify_location")
     log(f"   Result: Verified within {radius}m radius for device '{device_id}'")

@@ -1,10 +1,6 @@
 class Settings:
     """Application settings and configuration"""
 
-    # Server
-    PORT: int = 4000
-    HOST: str = "0.0.0.0"
-
     # AWS Bedrock - Claude 3 Haiku
     AWS_ACCESS_KEY_ID: str = "xxx"
     AWS_SECRET_ACCESS_KEY: str = "xxx"
@@ -18,12 +14,6 @@ class Settings:
 
     # CORS
     CORS_ORIGINS: list[str] = ["*"]
-
-    # Mission defaults
-    DEFAULT_DRONE_ID: str = "drone-001"
-    DEFAULT_PHONE_NUMBER: str = "+61491570006"
-    DEFAULT_INCIDENT_LAT: float = -37.8136
-    DEFAULT_INCIDENT_LON: float = 144.9631
 
 
 settings = Settings()
