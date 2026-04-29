@@ -221,7 +221,7 @@ const AIAssistantChatbot = ({
         // Check if this is verify_location tool and add drone kit marker
         if (event.data.tool === 'verify_location' && event.data.result) {
           const result = event.data.result as any;
-          if (result.verificationResult === 'true') {
+          if (result.verificationResult === true) {
             // Set drone active status
             setDroneActive(true);
 

@@ -54,7 +54,9 @@ When a user reports an incident location via chatbot, the system:
 - **API Client**: Fetch API (native browser fetch)
 - **Real-time Updates**: Server-Sent Events (SSE)
 - **Charting**: Recharts
+- **Markdown rendering**: react-markdown (for chatbot responses)
 - **UI Components**: Tailwind CSS, Lucide React icons
+- **E2E Testing**: Playwright (in `/e2e`)
 
 ## Common Commands
 
@@ -75,14 +77,30 @@ uvicorn app.main:app --reload --port 4000
 cd frontend-dashboard
 npm install
 npm run dev
+npm run lint    # ESLint 9 + typescript-eslint
 ```
 
 ### Build for Production
 
 ```bash
 cd frontend-dashboard
-npm run build
+npm run build   # runs `tsc -b` then `vite build`
 ```
+
+### End-to-End Tests (Playwright)
+
+E2E tests live in `/e2e` and use Playwright's `webServer` config to auto-start both backend (uvicorn :4000) and frontend (vite :5173). Do NOT start either server manually before running — Playwright uses `reuseExistingServer: false`.
+
+```bash
+cd e2e
+npm install
+npx playwright install chromium    # first time only
+npm test                           # headed (headless: false), slowMo 250ms
+npm run test:ui                    # Playwright UI mode
+npx playwright test full-flow      # single spec
+```
+
+Tests run sequentially (`workers: 1`, `fullyParallel: false`) because the FastAPI backend holds shared conversation and subscription state in-memory. Default timeout is 60s/test; the full disaster-flow spec extends to 10 minutes via `test.setTimeout(600_000)`. Fixtures live in `e2e/fixtures/app.fixture.ts` (e.g., `ChatbotPage` page object).
 
 ## Architecture Overview
 
@@ -166,7 +184,7 @@ npm run build
 │   │   ├── routers/
 │   │   │   ├── __init__.py
 │   │   │   ├── chat.py           # Chat endpoints (POST /api/chat/message)
-│   │   │   └── events.py         # SSE event stream endpoints (GET /api/events/stream)
+│   │   │   └── events.py         # SSE stream (GET /api/events/stream) + event injection (POST /api/events/publish)
 │   │   ├── services/
 │   │   │   ├── __init__.py
 │   │   │   ├── ai_agent.py       # AI agent orchestration
@@ -181,7 +199,13 @@ npm run build
 │   ├── uv.lock                   # Dependency lock file
 │   └── README.md                 # Backend documentation
 │
-├── AGENTS.md                     # This file
+├── e2e/                          # Playwright end-to-end tests
+│   ├── fixtures/app.fixture.ts   # Page object fixtures (ChatbotPage)
+│   ├── tests/full-flow.spec.ts   # Full disaster-response walkthrough
+│   └── playwright.config.ts      # Auto-starts backend+frontend webServers
+├── AGENTS.md                     # Agent-specific onboarding notes
+├── GEMINI.md                     # Gemini CLI onboarding notes (separate from CLAUDE.md)
+├── CLAUDE.md                     # This file
 ├── README.md                     # Root documentation
 └── images/
     ├── dashboard-normal.png      # Screenshot (normal mode)
@@ -548,6 +572,14 @@ The dashboard layout changes based on the current display mode:
   - Create/cancel WebRTC calls
   - Create QoD sessions
   - Close incident and reset dashboard
+- Slash commands: the chatbot also accepts `/<command>` shortcuts that expand to preset natural-language prompts. Definitions live in `frontend-dashboard/src/utils/slashCommands.ts`. Current commands:
+  - `/preflight-check`, `/check-network-status`, `/qos`
+  - `/report <address>`, `/verify-location`, `/subscribe-geofence`, `/unsubscribe-geofence`
+  - `/subscribe-network-change`, `/unsubscribe-network-change`
+  - `/edge-discovery`, `/deploy-edge-application`, `/undeploy-edge-application`
+  - `/accept-webrtc-call`, `/terminate-webrtc-call`, `/create-qod`
+  - `/mission-complete`
+  - The e2e test (`e2e/tests/full-flow.spec.ts`) exercises these in sequence
 
 #### NotificationContainer
 - Displays event notifications in top-right corner
@@ -670,6 +702,16 @@ Each store is focused on a specific domain to keep state management organized an
 ```
 
 ## Common Issues
+
+### Quick backend diagnostics
+
+`GET http://localhost:4000/health` returns MCP connection status and the Bedrock model ID — useful first check when debugging chatbot or tool-calling failures:
+
+```json
+{"status": "healthy", "mcp_server": "connected", "llm_model": "anthropic.claude-3-haiku-20240307-v1:0"}
+```
+
+If `mcp_server` is `disconnected`, the MCP subprocess failed to spawn — check that `.venv` exists in `backend-api/` and that `MCP_SERVER_COMMAND` in `config.py` matches the venv path.
 
 ### Backend won't start - LLM connection issues
 
