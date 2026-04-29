@@ -46,7 +46,7 @@ When a user reports an incident location via chatbot, the system:
 
 - **Frontend**: React 19 with TypeScript + Vite
 - **Backend**: FastAPI with Python 3.12
-- **AI/LLM**: AWS Bedrock Claude 3 Haiku (`anthropic.claude-3-haiku-20240307-v1:0`) via boto3 Converse API
+- **AI/LLM**: AWS Bedrock Claude Haiku 4.5 via the AU inference profile (`au.anthropic.claude-haiku-4-5-20251001-v1:0`) and boto3 Converse API
 - **MCP**: FastMCP for Model Context Protocol server
 - **Mapping**: Leaflet with React-Leaflet + leaflet.heat for heatmaps
 - **Video**: WebRTC (simulated)
@@ -117,7 +117,7 @@ Tests run sequentially (`workers: 1`, `fullyParallel: false`) because the FastAP
    - Event log for subscription notifications
    - AI chatbot interface
 
-2. **AI Agent with LLM** - Intelligent assistant for operators powered by AWS Bedrock Claude 3 Haiku (`anthropic.claude-3-haiku-20240307-v1:0`) via boto3 Converse API with tool calling capabilities to CAMARA APIs via MCP (Model Context Protocol)
+2. **AI Agent with LLM** - Intelligent assistant for operators powered by AWS Bedrock Claude Haiku 4.5 via the AU inference profile (`au.anthropic.claude-haiku-4-5-20251001-v1:0`) and boto3 Converse API with tool calling capabilities to CAMARA APIs via MCP (Model Context Protocol)
 
 3. **FastAPI Backend** - Python backend server with:
    - AI Agent orchestration
@@ -267,7 +267,7 @@ The complete mission follows this 16-step sequence (workflow is the same for bot
 
 ### Phase 6: AI Assistant Interaction (Step 14)
 
-14. **Chatbot Queries**: Operator asks questions via chatbot powered by AWS Bedrock Claude 3 Haiku with MCP tool calling:
+14. **Chatbot Queries**: Operator asks questions via chatbot powered by AWS Bedrock Claude Haiku 4.5 with MCP tool calling:
     - "What is the current connectivity status of the drone?"
     - "What is the current location of the drone?"
     - "How many people are in the disaster area?"
@@ -288,7 +288,7 @@ The complete mission follows this 16-step sequence (workflow is the same for bot
 
 ### Implementation Approach
 
-All CAMARA APIs are accessed through **MCP (Model Context Protocol)** tools provided by the FastMCP server (`backend-api/app/services/mcp_server.py`). The AI agent (powered by AWS Bedrock Claude 3 Haiku via boto3 Converse API) calls these tools via natural language requests from the operator.
+All CAMARA APIs are accessed through **MCP (Model Context Protocol)** tools provided by the FastMCP server (`backend-api/app/services/mcp_server.py`). The AI agent (powered by AWS Bedrock Claude Haiku 4.5 via the AU inference profile and boto3 Converse API) calls these tools via natural language requests from the operator.
 
 **MCP Server Configuration** (in `backend-api/app/config.py`):
 ```python
@@ -323,7 +323,7 @@ The MCP server provides these tools that mock CAMARA API functionality:
 **Operator Flow:**
 1. Operator types natural language query in chatbot (e.g., "Check all available QoS profiles")
 2. Frontend sends message to backend via fetch POST to `/api/chat/message`
-3. Backend's AI Agent uses AWS Bedrock Claude 3 Haiku (via boto3 Converse API) to understand intent
+3. Backend's AI Agent uses AWS Bedrock Claude Haiku 4.5 (via the AU inference profile and boto3 Converse API) to understand intent
 4. Claude calls appropriate MCP tool via function calling
 5. MCP server executes tool and returns mocked data
 6. AI Agent formats response and streams back to frontend via SSE
@@ -560,7 +560,7 @@ The dashboard layout changes based on the current display mode:
 - Shown before incident is reported
 
 #### AIAssistantChatbot
-- Natural language interface powered by AWS Bedrock Claude 3 Haiku (`anthropic.claude-3-haiku-20240307-v1:0`) via boto3 Converse API
+- Natural language interface powered by AWS Bedrock Claude Haiku 4.5 via the AU inference profile (`au.anthropic.claude-haiku-4-5-20251001-v1:0`) and boto3 Converse API
 - Tool calling visualization showing MCP function invocations
 - Streaming responses via SSE
 - Message history with user/assistant/system messages
@@ -708,7 +708,7 @@ Each store is focused on a specific domain to keep state management organized an
 `GET http://localhost:4000/health` returns MCP connection status and the Bedrock model ID — useful first check when debugging chatbot or tool-calling failures:
 
 ```json
-{"status": "healthy", "mcp_server": "connected", "llm_model": "anthropic.claude-3-haiku-20240307-v1:0"}
+{"status": "healthy", "mcp_server": "connected", "llm_model": "au.anthropic.claude-haiku-4-5-20251001-v1:0"}
 ```
 
 If `mcp_server` is `disconnected`, the MCP subprocess failed to spawn — check that `.venv` exists in `backend-api/` and that `MCP_SERVER_COMMAND` in `config.py` matches the venv path.
@@ -752,7 +752,7 @@ import 'leaflet/dist/leaflet.css';
 
 ## AI Assistant Queries
 
-The AI assistant (powered by AWS Bedrock Claude 3 Haiku with MCP tool calling) responds to natural language queries:
+The AI assistant (powered by AWS Bedrock Claude Haiku 4.5 with MCP tool calling) responds to natural language queries:
 
 **Common Queries (both use cases):**
 

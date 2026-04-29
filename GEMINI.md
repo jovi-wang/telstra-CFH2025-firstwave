@@ -8,7 +8,7 @@ This project is a disaster response drone system developed for the Telstra Conne
 - **Technologies**:
   - **Frontend**: React, TypeScript, Vite, Tailwind CSS.
   - **Backend**: Python, FastAPI, MCP (Model Context Protocol).
-  - **AI Integration**: AWS Bedrock (Claude 3 Haiku).
+  - **AI Integration**: AWS Bedrock (Claude Haiku 4.5 via the AU inference profile).
 - **Architecture**: A modular system featuring an operator dashboard, an AI-powered orchestration backend, and a CAMARA MCP server that provides mocked network API capabilities.
 
 ## Building and Running

@@ -166,7 +166,7 @@ This solution leverages 15 CAMARA network APIs across 6 categories to deliver a 
 | **React 19 + TypeScript**        | Frontend framework   |
 | **Vite**                         | Build tool           |
 | **FastAPI (Python 3.12)**        | Backend framework    |
-| **AWS Bedrock Claude 3 Haiku**   | LLM for AI agent     |
+| **AWS Bedrock Claude Haiku 4.5** | LLM for AI agent     |
 | **FastMCP**                      | MCP server framework |
 | **Zustand**                      | State management     |
 | **Leaflet**                      | Mapping library      |

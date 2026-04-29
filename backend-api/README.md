@@ -97,7 +97,7 @@ curl --request POST \
           │
    ┌──────▼───────────────┐
    │   AWS Bedrock        │
-   │  Claude 3 Haiku      │
+   │  Claude Haiku 4.5    │
    │ (boto3 Converse API) │
    └──────────────────────┘
 ```
@@ -118,7 +118,7 @@ curl --request POST \
 
 ### 3. LLM Service (`app/services/llm_service.py`)
 
-- Connects to AWS Bedrock Claude 3 Haiku (`anthropic.claude-3-haiku-20240307-v1:0`) via boto3 Converse API
+- Connects to AWS Bedrock Claude Haiku 4.5 via the AU inference profile (`au.anthropic.claude-haiku-4-5-20251001-v1:0`) and boto3 Converse API
 - Supports function/tool calling via Bedrock's native tool use
 - Streams LLM responses token by token
 
@@ -159,11 +159,11 @@ curl --request POST \
 ## 🔧 Configuration (`app/config.py`)
 
 ```python
-# AWS Bedrock - Claude 3 Haiku
+# AWS Bedrock - Claude Haiku 4.5
 AWS_ACCESS_KEY_ID = "..."          # hardcoded for hackathon
 AWS_SECRET_ACCESS_KEY = "..."      # hardcoded for hackathon
 AWS_REGION = "ap-southeast-2"
-BEDROCK_MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
+BEDROCK_MODEL_ID = "au.anthropic.claude-haiku-4-5-20251001-v1:0"
 
 # CORS settings
 CORS_ORIGINS = ["*"]  # Allow all origins for development
