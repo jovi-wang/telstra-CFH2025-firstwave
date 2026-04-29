@@ -75,8 +75,7 @@ class EventStreamService {
     });
 
     // Handle region_device_count - emit with data (used for heatmap display)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    this.eventSource.addEventListener('region_device_count', (event: any) => {
+    this.eventSource.addEventListener('region_device_count', (event: MessageEvent) => {
       const data = JSON.parse(event.data);
       console.log('📊 Region Device Count Event:', data);
       this.emit('region_device_count', data);

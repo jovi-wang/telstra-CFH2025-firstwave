@@ -7,12 +7,22 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'map-vendor': ['leaflet', 'react-leaflet', 'leaflet.heat'],
-          'chart-vendor': ['recharts'],
-          'markdown-vendor': ['react-markdown'],
-          'zustand-vendor': ['zustand'],
+        manualChunks(id) {
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+            return 'react-vendor'
+          }
+          if (id.includes('node_modules/leaflet') || id.includes('node_modules/react-leaflet')) {
+            return 'map-vendor'
+          }
+          if (id.includes('node_modules/recharts')) {
+            return 'chart-vendor'
+          }
+          if (id.includes('node_modules/react-markdown')) {
+            return 'markdown-vendor'
+          }
+          if (id.includes('node_modules/zustand')) {
+            return 'zustand-vendor'
+          }
         },
       },
     },
